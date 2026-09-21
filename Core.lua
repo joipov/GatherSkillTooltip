@@ -275,25 +275,41 @@ function ns.CheckTracking()
 	end
 
 	local L = ns.L
-	local lines = {}
-	if db.herbalism and ns.skills.herb and not IsTrackingSpell(ns.FIND_HERBS_SPELL) then
-		lines[#lines + 1] = L.SPELL_OFF:format(ns.SpellName(ns.FIND_HERBS_SPELL, L.FIND_HERBS))
-	end
-	if db.mining and ns.skills.mine and not IsTrackingSpell(ns.FIND_MINERALS_SPELL) then
-		lines[#lines + 1] = L.SPELL_OFF:format(ns.SpellName(ns.FIND_MINERALS_SPELL, L.FIND_MINERALS))
-	end
-
-	if #lines == 0 then
+	local needHerb = db.herbalism and ns.skills.herb
+	local needMine = db.mining and ns.skills.mine
+	if not needHerb and not needMine then
 		HideWarning()
 		return
 	end
 
-	local key = table.concat(lines, "\n")
-	if key == lastWarningKey and warningFrame and warningFrame:IsShown() then
+	local herbOn = IsTrackingSpell(ns.FIND_HERBS_SPELL)
+	local mineOn = IsTrackingSpell(ns.FIND_MINERALS_SPELL)
+	local message
+	if needHerb and needMine then
+		if herbOn or mineOn then
+			HideWarning()
+			return
+		end
+		message = L.TRACKING_OFF_BOTH
+	elseif needHerb then
+		if herbOn then
+			HideWarning()
+			return
+		end
+		message = L.SPELL_OFF:format(ns.SpellName(ns.FIND_HERBS_SPELL, L.FIND_HERBS))
+	else
+		if mineOn then
+			HideWarning()
+			return
+		end
+		message = L.SPELL_OFF:format(ns.SpellName(ns.FIND_MINERALS_SPELL, L.FIND_MINERALS))
+	end
+
+	if message == lastWarningKey and warningFrame and warningFrame:IsShown() then
 		return
 	end
-	lastWarningKey = key
-	ShowWarning(key)
+	lastWarningKey = message
+	ShowWarning(message)
 end
 
 function ns.QueueTrackingCheck()

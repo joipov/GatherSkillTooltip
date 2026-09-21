@@ -91,8 +91,8 @@ function ns.InitOptions()
 	AddHeader(L.HEADER_TRACKING)
 	local warnCheckbox = AddCheckbox(
 		"warnTracking",
-		L.WARN_TRACKING:format(findHerbs, findMinerals),
-		L.WARN_TRACKING_TIP
+		L.WARN_TRACKING,
+		L.WARN_TRACKING_TIP:format(findHerbs, findMinerals)
 	)
 
 	AddHeader(L.HEADER_BUTTON)

@@ -24,8 +24,9 @@ local EN = {
 	COLOR = "Color by difficulty",
 	COLOR_TIP = "Red if you can't gather it, then orange, yellow, green, grey.",
 	HEADER_TRACKING = "Tracking",
-	WARN_TRACKING = "Warn if %s / %s is off",
-	WARN_TRACKING_TIP = "Message in the middle of the screen until you turn tracking on.",
+	WARN_TRACKING = "Warn if gathering tracking is off",
+	WARN_TRACKING_TIP = "Message in the middle of the screen until you turn on %s or %s. One is enough.",
+	TRACKING_OFF_BOTH = "No herb or mineral tracking",
 	HEADER_BUTTON = "Button",
 	SHOW_MINIMAP = "Show minimap button",
 	SHOW_MINIMAP_TIP = "Button on the minimap. Opens settings. Ellesmere puts it with the other addon buttons.",
@@ -37,13 +38,13 @@ local EN = {
 	DRAG_MOVE = "Drag to move.",
 	FIND_HERBS = "Find Herbs",
 	FIND_MINERALS = "Find Minerals",
-	NOTES = "Shows your skill and the required skill when you hover a herb or ore, on a minimap pin or in the world.",
 	EXAMPLE_HERB = "Peacebloom",
 }
+
 local UI = {
 	deDE = {
 		ENABLE = "%s aktivieren",
-		ENABLE_TIP = "Aus bedeutet keine Tooltip-Änderungen und keine Tracking-Warnung.",
+		ENABLE_TIP = "Aus bedeutet keine Tooltip-Änderungen und keine Warnung zum Aufspüren.",
 		HEADER_PROFESSIONS = "Berufe",
 		HERBALISM = "Kräuterkunde",
 		HERBALISM_TIP = "Fertigkeit auf Kräutern anzeigen.",
@@ -57,8 +58,9 @@ local UI = {
 		COLOR = "Nach Schwierigkeit färben",
 		COLOR_TIP = "Rot, wenn du es nicht sammeln kannst, dann orange, gelb, grün, grau.",
 		HEADER_TRACKING = "Aufspüren",
-		WARN_TRACKING = "Warnen, wenn %s / %s aus ist",
-		WARN_TRACKING_TIP = "Hinweis in der Bildschirmmitte, bis du das Aufspüren einschaltest.",
+		WARN_TRACKING = "Warnen, wenn kein Sammel-Aufspüren an ist",
+		WARN_TRACKING_TIP = "Hinweis in der Bildschirmmitte, bis du %s oder %s einschaltest. Eins reicht.",
+		TRACKING_OFF_BOTH = "Kein Aufspüren von Kräutern oder Erzen",
 		HEADER_BUTTON = "Button",
 		SHOW_MINIMAP = "Minikarten-Button anzeigen",
 		SHOW_MINIMAP_TIP = "Button an der Minikarte. Öffnet die Einstellungen. Ellesmere legt ihn zu den anderen Addon-Buttons.",
@@ -70,7 +72,6 @@ local UI = {
 		DRAG_MOVE = "Ziehen zum Verschieben.",
 		FIND_HERBS = "Kräuter finden",
 		FIND_MINERALS = "Mineralien finden",
-		NOTES = "Zeigt deine Fertigkeit und die benötigte Fertigkeit, wenn du über ein Kraut oder Erz fährst, auf einem Minikarten-Pin oder in der Welt.",
 		EXAMPLE_HERB = "Friedensblume",
 	},
 	frFR = {
@@ -89,8 +90,9 @@ local UI = {
 		COLOR = "Colorer selon la difficulté",
 		COLOR_TIP = "Rouge si vous ne pouvez pas le récolter, puis orange, jaune, vert, gris.",
 		HEADER_TRACKING = "Pistage",
-		WARN_TRACKING = "Avertir si %s / %s est désactivé",
-		WARN_TRACKING_TIP = "Message au milieu de l'écran jusqu'à ce que vous activiez le pistage.",
+		WARN_TRACKING = "Avertir si le pistage de récolte est désactivé",
+		WARN_TRACKING_TIP = "Message au milieu de l'écran jusqu'à ce que vous activiez %s ou %s. Un seul suffit.",
+		TRACKING_OFF_BOTH = "Aucun pistage d'herbes ou de minerais",
 		HEADER_BUTTON = "Bouton",
 		SHOW_MINIMAP = "Afficher le bouton de minicarte",
 		SHOW_MINIMAP_TIP = "Bouton sur la minicarte. Ouvre les réglages. Ellesmere le place avec les autres boutons d'addon.",
@@ -102,7 +104,6 @@ local UI = {
 		DRAG_MOVE = "Glisser pour déplacer.",
 		FIND_HERBS = "Découverte d'herbes",
 		FIND_MINERALS = "Découverte de gisements",
-		NOTES = "Affiche votre compétence et la compétence requise quand vous survolez une herbe ou un minerai, sur un repère de minicarte ou dans le monde.",
 		EXAMPLE_HERB = "Pacifique",
 	},
 	esES = {
@@ -121,8 +122,9 @@ local UI = {
 		COLOR = "Colorear por dificultad",
 		COLOR_TIP = "Rojo si no puedes recogerlo, luego naranja, amarillo, verde, gris.",
 		HEADER_TRACKING = "Rastreo",
-		WARN_TRACKING = "Avisar si %s / %s está desactivado",
-		WARN_TRACKING_TIP = "Mensaje en el centro de la pantalla hasta que actives el rastreo.",
+		WARN_TRACKING = "Avisar si el rastreo de recolección está desactivado",
+		WARN_TRACKING_TIP = "Mensaje en el centro de la pantalla hasta que actives %s o %s. Con uno basta.",
+		TRACKING_OFF_BOTH = "Sin rastreo de hierbas ni minerales",
 		HEADER_BUTTON = "Botón",
 		SHOW_MINIMAP = "Mostrar botón del minimapa",
 		SHOW_MINIMAP_TIP = "Botón en el minimapa. Abre la configuración. Ellesmere lo pone con los demás botones de addons.",
@@ -134,7 +136,6 @@ local UI = {
 		DRAG_MOVE = "Arrastra para mover.",
 		FIND_HERBS = "Buscar hierbas",
 		FIND_MINERALS = "Buscar minerales",
-		NOTES = "Muestra tu habilidad y la requerida al pasar el cursor por una hierba o un mineral, en un pin del minimapa o en el mundo.",
 		EXAMPLE_HERB = "Flor de paz",
 	},
 	esMX = {
@@ -153,8 +154,9 @@ local UI = {
 		COLOR = "Colorear por dificultad",
 		COLOR_TIP = "Rojo si no puedes recolectarlo, luego naranja, amarillo, verde, gris.",
 		HEADER_TRACKING = "Rastreo",
-		WARN_TRACKING = "Avisar si %s / %s está desactivado",
-		WARN_TRACKING_TIP = "Mensaje en el centro de la pantalla hasta que actives el rastreo.",
+		WARN_TRACKING = "Avisar si el rastreo de recolección está desactivado",
+		WARN_TRACKING_TIP = "Mensaje en el centro de la pantalla hasta que actives %s o %s. Con uno basta.",
+		TRACKING_OFF_BOTH = "Sin rastreo de hierbas ni minerales",
 		HEADER_BUTTON = "Botón",
 		SHOW_MINIMAP = "Mostrar botón del minimapa",
 		SHOW_MINIMAP_TIP = "Botón en el minimapa. Abre la configuración. Ellesmere lo pone con los demás botones de addons.",
@@ -166,7 +168,6 @@ local UI = {
 		DRAG_MOVE = "Arrastra para mover.",
 		FIND_HERBS = "Buscar hierbas",
 		FIND_MINERALS = "Buscar minerales",
-		NOTES = "Muestra tu habilidad y la requerida al pasar el cursor por una hierba o un mineral, en un pin del minimapa o en el mundo.",
 		EXAMPLE_HERB = "Flor de paz",
 	},
 	itIT = {
@@ -185,8 +186,9 @@ local UI = {
 		COLOR = "Colore in base alla difficoltà",
 		COLOR_TIP = "Rosso se non puoi raccoglierlo, poi arancione, giallo, verde, grigio.",
 		HEADER_TRACKING = "Tracciamento",
-		WARN_TRACKING = "Avvisa se %s / %s è disattivo",
-		WARN_TRACKING_TIP = "Messaggio al centro dello schermo finché non attivi il tracciamento.",
+		WARN_TRACKING = "Avvisa se il tracciamento di raccolta è disattivo",
+		WARN_TRACKING_TIP = "Messaggio al centro dello schermo finché non attivi %s o %s. Ne basta uno.",
+		TRACKING_OFF_BOTH = "Nessun tracciamento di erbe o minerali",
 		HEADER_BUTTON = "Pulsante",
 		SHOW_MINIMAP = "Mostra il pulsante della minimappa",
 		SHOW_MINIMAP_TIP = "Pulsante sulla minimappa. Apre le impostazioni. Ellesmere lo mette con gli altri pulsanti degli addon.",
@@ -198,7 +200,6 @@ local UI = {
 		DRAG_MOVE = "Trascina per spostare.",
 		FIND_HERBS = "Ricerca erbe",
 		FIND_MINERALS = "Ricerca minerali",
-		NOTES = "Mostra la tua abilità e quella richiesta quando passi su un'erba o un minerale, su un contrassegno della minimappa o nel mondo.",
 		EXAMPLE_HERB = "Sbocciapace",
 	},
 	ptBR = {
@@ -217,8 +218,9 @@ local UI = {
 		COLOR = "Colorir por dificuldade",
 		COLOR_TIP = "Vermelho se você não puder coletar, depois laranja, amarelo, verde, cinza.",
 		HEADER_TRACKING = "Rastreamento",
-		WARN_TRACKING = "Avisar se %s / %s estiver desligado",
-		WARN_TRACKING_TIP = "Mensagem no meio da tela até você ligar o rastreamento.",
+		WARN_TRACKING = "Avisar se o rastreamento de coleta estiver desligado",
+		WARN_TRACKING_TIP = "Mensagem no meio da tela até você ligar %s ou %s. Um já basta.",
+		TRACKING_OFF_BOTH = "Sem rastreamento de ervas ou minérios",
 		HEADER_BUTTON = "Botão",
 		SHOW_MINIMAP = "Mostrar botão do minimapa",
 		SHOW_MINIMAP_TIP = "Botão no minimapa. Abre as opções. O Ellesmere coloca junto com os outros botões de addon.",
@@ -230,7 +232,6 @@ local UI = {
 		DRAG_MOVE = "Arraste para mover.",
 		FIND_HERBS = "Localizar Ervas",
 		FIND_MINERALS = "Localizar Minerais",
-		NOTES = "Mostra sua perícia e a perícia necessária ao passar o mouse em uma erva ou minério, em um marcador do minimapa ou no mundo.",
 		EXAMPLE_HERB = "Botão-da-paz",
 	},
 	koKR = {
@@ -249,8 +250,9 @@ local UI = {
 		COLOR = "난이도별 색상",
 		COLOR_TIP = "채집할 수 없으면 빨강, 그다음 주황, 노랑, 초록, 회색.",
 		HEADER_TRACKING = "추적",
-		WARN_TRACKING = "%s / %s이(가) 꺼져 있으면 경고",
-		WARN_TRACKING_TIP = "추적을 켤 때까지 화면 가운데에 메시지를 띄웁니다.",
+		WARN_TRACKING = "채집 추적이 꺼져 있으면 경고",
+		WARN_TRACKING_TIP = "%s 또는 %s을(를) 켤 때까지 화면 가운데에 메시지를 띄웁니다. 하나만 켜면 됩니다.",
+		TRACKING_OFF_BOTH = "약초나 광물 추적이 꺼져 있습니다",
 		HEADER_BUTTON = "버튼",
 		SHOW_MINIMAP = "미니맵 버튼 표시",
 		SHOW_MINIMAP_TIP = "미니맵의 버튼. 설정을 엽니다. Ellesmere가 다른 애드온 버튼과 함께 배치합니다.",
@@ -262,7 +264,6 @@ local UI = {
 		DRAG_MOVE = "드래그해서 이동.",
 		FIND_HERBS = "약초 찾기",
 		FIND_MINERALS = "광물 찾기",
-		NOTES = "미니맵 핀이나 세계에서 약초나 광석에 커서를 올리면 내 숙련도와 필요 숙련도를 보여 줍니다.",
 		EXAMPLE_HERB = "평온초",
 	},
 	zhCN = {
@@ -281,8 +282,9 @@ local UI = {
 		COLOR = "按难度着色",
 		COLOR_TIP = "采不了是红色，然后是橙色、黄色、绿色、灰色。",
 		HEADER_TRACKING = "追踪",
-		WARN_TRACKING = "%s / %s 关闭时警告",
-		WARN_TRACKING_TIP = "在打开追踪之前，屏幕中间一直显示提示。",
+		WARN_TRACKING = "采集追踪关闭时警告",
+		WARN_TRACKING_TIP = "打开 %s 或 %s 之前，屏幕中间一直显示提示。开一个就够。",
+		TRACKING_OFF_BOTH = "未追踪草药或矿物",
 		HEADER_BUTTON = "按钮",
 		SHOW_MINIMAP = "显示小地图按钮",
 		SHOW_MINIMAP_TIP = "小地图上的按钮，用来打开设置。Ellesmere 会把它和其他插件按钮放在一起。",
@@ -294,7 +296,6 @@ local UI = {
 		DRAG_MOVE = "拖动可移动。",
 		FIND_HERBS = "寻找草药",
 		FIND_MINERALS = "寻找矿物",
-		NOTES = "将鼠标放在草药或矿石上时显示你的技能和所需技能，小地图标记和世界里的节点都有效。",
 		EXAMPLE_HERB = "宁神花",
 	},
 	zhTW = {
@@ -313,8 +314,9 @@ local UI = {
 		COLOR = "依難度著色",
 		COLOR_TIP = "採不了是紅色，然後是橙色、黃色、綠色、灰色。",
 		HEADER_TRACKING = "追蹤",
-		WARN_TRACKING = "%s / %s 關閉時警告",
-		WARN_TRACKING_TIP = "在打開追蹤之前，畫面中央會一直顯示提示。",
+		WARN_TRACKING = "採集追蹤關閉時警告",
+		WARN_TRACKING_TIP = "打開 %s 或 %s 之前，畫面中央會一直顯示提示。開一個就夠。",
+		TRACKING_OFF_BOTH = "未追蹤草藥或礦物",
 		HEADER_BUTTON = "按鈕",
 		SHOW_MINIMAP = "顯示小地圖按鈕",
 		SHOW_MINIMAP_TIP = "小地圖上的按鈕，用來打開設定。Ellesmere 會把它和其他插件按鈕放在一起。",
@@ -326,10 +328,10 @@ local UI = {
 		DRAG_MOVE = "拖曳可移動。",
 		FIND_HERBS = "尋找草藥",
 		FIND_MINERALS = "尋找礦物",
-		NOTES = "將滑鼠放在草藥或礦石上時顯示你的技能和所需技能，小地圖標記和世界裡的節點都有效。",
 		EXAMPLE_HERB = "寧神花",
 	},
 }
+
 local ALIASES = {
 	deDE = {
 		["Friedensblume"] = "Peacebloom",
@@ -809,7 +811,6 @@ local locale = GetLocale and GetLocale() or "enUS"
 if locale == "enGB" then
 	locale = "enUS"
 end
-ns.locale = locale
 
 ns.L = CopyTable(EN)
 local overlay = UI[locale]
@@ -827,7 +828,7 @@ local function AddLookup(name, node)
 	end
 end
 
-function ns.BuildLookup()
+local function BuildLookup()
 	for name in pairs(ns.LOOKUP) do
 		ns.LOOKUP[name] = nil
 	end
@@ -846,7 +847,7 @@ function ns.BuildLookup()
 	end
 end
 
-ns.BuildLookup()
+BuildLookup()
 
 function ns.SpellName(spellID, fallback)
 	if C_Spell and C_Spell.GetSpellName then
