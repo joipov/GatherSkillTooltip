@@ -829,9 +829,6 @@ local function AddLookup(name, node)
 end
 
 local function BuildLookup()
-	for name in pairs(ns.LOOKUP) do
-		ns.LOOKUP[name] = nil
-	end
 	if not ns.NODES then
 		return
 	end

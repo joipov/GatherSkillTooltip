@@ -170,7 +170,38 @@ local function FormatNode(name, node)
 end
 
 local function TooltipFontString(tooltip)
-	return tooltip.TextLeft1 or _G[tooltip:GetName() .. "TextLeft1"]
+	local name = tooltip.GetName and tooltip:GetName()
+	if name then
+		local fs = _G[name .. "TextLeft1"]
+		if fs then
+			return fs
+		end
+	end
+	return tooltip.TextLeft1
+end
+
+local function FirstSegment(text)
+	if not text or text == "" then
+		return nil, nil
+	end
+	local first, rest = text:match("^(.-)\n(.*)$")
+	if first then
+		return first, rest
+	end
+	return text, nil
+end
+
+local function ColorWrap(text, color)
+	if not color then
+		return text
+	end
+	return string.format(
+		"|cff%02x%02x%02x%s|r",
+		math.floor(color[1] * 255 + 0.5),
+		math.floor(color[2] * 255 + 0.5),
+		math.floor(color[3] * 255 + 0.5),
+		text
+	)
 end
 
 local function FirstLine(tooltip, data)
@@ -199,7 +230,8 @@ local function ApplyTooltip(tooltip, data)
 		return false
 	end
 
-	local name, node, cleaned = FindNode(raw)
+	local first, rest = FirstSegment(raw)
+	local name, node, cleaned = FindNode(first)
 	if not node then
 		if db.debug and cleaned and cleaned ~= lastDebugText and #cleaned < 60 then
 			lastDebugText = cleaned
@@ -213,14 +245,17 @@ local function ApplyTooltip(tooltip, data)
 		return false
 	end
 
-	if fs:GetText() ~= title then
-		fs:SetText(title)
+	local display = title
+	if db.color then
+		display = ColorWrap(title, color)
 	end
-	if db.color and color then
-		fs:SetTextColor(color[1], color[2], color[3])
-	elseif HIGHLIGHT_FONT_COLOR then
-		fs:SetTextColor(HIGHLIGHT_FONT_COLOR.r, HIGHLIGHT_FONT_COLOR.g, HIGHLIGHT_FONT_COLOR.b)
+	if rest then
+		display = display .. "\n" .. rest
 	end
+	if fs:GetText() ~= display then
+		fs:SetText(display)
+	end
+	fs:SetTextColor(1, 1, 1)
 	return true
 end
 
