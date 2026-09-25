@@ -13,13 +13,17 @@
     "utf8": "disable"
   },
   "workspace.library": [
+    ".annotations",
     "C:/Users/rubin/.cursor/extensions/ketho.wow-api/Annotations/Core"
+  ],
+  "workspace.ignoreDir": [
+    ".release",
+    "tests"
   ],
   "workspace.checkThirdParty": false,
   "diagnostics.globals": [
     "SLASH_GATHERSKILLTOOLTIP1",
     "SLASH_GATHERSKILLTOOLTIP2",
-    "SlashCmdList",
     "GatherSkillTooltip_OnAddonCompartmentClick",
     "GatherSkillTooltipDB"
   ],
