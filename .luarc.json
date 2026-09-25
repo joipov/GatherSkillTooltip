@@ -1,0 +1,36 @@
+{
+  "$schema": "https://raw.githubusercontent.com/LuaLS/lua-language-server/master/locale/en-us/setting.lua",
+  "runtime.version": "Lua 5.1",
+  "runtime.builtin": {
+    "basic": "disable",
+    "debug": "disable",
+    "io": "disable",
+    "math": "disable",
+    "os": "disable",
+    "package": "disable",
+    "string": "disable",
+    "table": "disable",
+    "utf8": "disable"
+  },
+  "workspace.library": [
+    "C:/Users/rubin/.cursor/extensions/ketho.wow-api/Annotations/Core"
+  ],
+  "workspace.checkThirdParty": false,
+  "diagnostics.globals": [
+    "SLASH_GATHERSKILLTOOLTIP1",
+    "SLASH_GATHERSKILLTOOLTIP2",
+    "SlashCmdList",
+    "GatherSkillTooltip_OnAddonCompartmentClick",
+    "GatherSkillTooltipDB"
+  ],
+  "diagnostics.severity": {
+    "undefined-global": "Error",
+    "unused-local": "Error",
+    "unused-function": "Error",
+    "param-type-mismatch": "Error",
+    "missing-return": "Error",
+    "need-check-nil": "Error",
+    "redundant-parameter": "Error",
+    "cast-type-mismatch": "Error"
+  }
+}
