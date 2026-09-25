@@ -1023,12 +1023,25 @@ if overlay then
 	end
 end
 
+-- Locale-independent creature type IDs, the second return of
+-- UnitCreatureType (COMPAT-003). Confirm in-game with
+-- /dump UnitCreatureType("target") on a beast; the name table below is the
+-- fallback until that check is recorded in CODE_AUDIT.md.
+ns.SKIN_TYPE_IDS = {
+	[1] = true, -- Beast
+	[2] = true, -- Dragonkin
+}
+
 ns.SKIN_TYPES = {
 	Beast = true,
 	Dragonkin = true,
 	[ns.L.CREATURE_BEAST] = true,
 	[ns.L.CREATURE_DRAGONKIN] = true,
 }
+
+-- The client's own "Skinnable" tooltip string when available (COMPAT-004);
+-- the localized table entry is the fallback.
+ns.SKINNABLE_TEXT = _G.UNIT_SKINNABLE_LEATHER or ns.L.SKINNABLE
 
 local function AddLookup(name, node)
 	if name and node then

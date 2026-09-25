@@ -1453,6 +1453,23 @@ local function UnitNpcID(unit, data)
 	return nil
 end
 
+-- Unknown NPCs fall back to creature type: numeric id first (locale
+-- independent), localized name second (COMPAT-003). In debug mode a
+-- disagreement between the two is printed so the id table can be confirmed.
+local function SkinnableCreatureType(unit)
+	local kind, kindID = UnitCreatureType(unit)
+	local byID = false
+	if type(kindID) == "number" and not SecretBlocked(kindID) then
+		byID = ns.SKIN_TYPE_IDS[kindID] == true
+	end
+	local name = ReadableString(kind)
+	local byName = name ~= nil and ns.SKIN_TYPES[name] == true
+	if ns.db.debug and name and byID ~= byName then
+		print("|cff88ccff" .. ns.TITLE .. ":|r creature type mismatch", name, tostring(kindID), "id:", tostring(byID), "name:", tostring(byName))
+	end
+	return byID or byName
+end
+
 local function CanSkinUnit(unit, data)
 	if type(unit) ~= "string" or SecretBlocked(unit) then
 		return false
@@ -1470,11 +1487,8 @@ local function CanSkinUnit(unit, data)
 	if known == false then
 		return false
 	end
-	if known ~= true then
-		local kind = ReadableString(UnitCreatureType(unit))
-		if not kind or not ns.SKIN_TYPES or not ns.SKIN_TYPES[kind] then
-			return false
-		end
+	if known ~= true and not SkinnableCreatureType(unit) then
+		return false
 	end
 	local dead = UnitIsDead(unit)
 	if SecretBlocked(dead) then
@@ -1517,8 +1531,8 @@ end
 
 local function TextHasSkinnable(text)
 	text = ReadableString(text)
-	local word = ns.L and ns.L.SKINNABLE
-	if not text or not word or word == "" then
+	local word = ns.SKINNABLE_TEXT
+	if not text or type(word) ~= "string" or word == "" then
 		return false
 	end
 	return text:find(word, 1, true) ~= nil
