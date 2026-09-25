@@ -367,3 +367,28 @@ Ranked by expected impact and confidence. This addon has no demonstrated bottlen
 
 **Release**
 - Bump `## Version`, update `CHANGELOG.md`, tag, package via packager, install the zip fresh and re-run the smoke subset.
+
+---
+
+## Appendix A: Baseline record (Phase 0)
+
+Baseline code: git tag `v1.9.0-baseline` in `%USERPROFILE%\dev\GatherSkillTooltip` (the AddOns folder entry is a junction to that repo). To measure the baseline, check out the tag, `/reload`, and run the scripted session from Part 4.
+
+Snippets (paste in chat; `/gst debug` is not required):
+
+```
+/run local m=Enum.AddOnProfilerMetric; local f=C_AddOnProfiler.GetAddOnMetric; print("GST profiler enabled:", C_AddOnProfiler.IsEnabled(), "avg", f("GatherSkillTooltip", m.RecentAverageTime), "peak", f("GatherSkillTooltip", m.PeakTime), ">1ms", f("GatherSkillTooltip", m.CountTimeOver1Ms))
+/run UpdateAddOnMemoryUsage(); print("GST memory KB:", GetAddOnMemoryUsage("GatherSkillTooltip"))
+```
+
+| Measurement | Baseline (1.9.0) | After Phase 2 | After Phase 5 |
+| --- | --- | --- | --- |
+| `RecentAverageTime` (ms) after scripted session | not yet measured in-game | | |
+| `PeakTime` (ms) | not yet measured in-game | | |
+| `CountTimeOver1Ms` | not yet measured in-game | | |
+| Memory at login + 60 s (KB) | not yet measured in-game | | |
+| Memory after session (KB) | not yet measured in-game | | |
+| `collectgarbage("count")` delta, 1 min combat, addon on | not yet measured in-game | | |
+| `collectgarbage("count")` delta, 1 min combat, addon off | not yet measured in-game | | |
+
+Rules: fill cells only with values read from the client; leave "not yet measured in-game" otherwise. No percentages are claimed anywhere in this document until both columns of a row are filled.
