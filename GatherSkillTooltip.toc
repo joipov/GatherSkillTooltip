@@ -1,0 +1,25 @@
+## Interface: 16001
+## Title: GatherSkillTooltip
+## Notes: Shows your skill and the required skill when you hover a herb or ore, on a minimap pin or in the world, and beside the level of a creature you can skin.
+## Notes-deDE: Zeigt deine Fertigkeit und die benötigte Fertigkeit, wenn du über ein Kraut oder Erz fährst, auf einem Minikarten-Pin oder in der Welt, und neben der Stufe einer Kreatur, die du häuten kannst.
+## Notes-frFR: Affiche votre compétence et la compétence requise quand vous survolez une herbe ou un minerai, sur un repère de minicarte ou dans le monde, et à côté du niveau d'une créature que vous pouvez dépecer.
+## Notes-esES: Muestra tu habilidad y la requerida al pasar el cursor por una hierba o un mineral, en un pin del minimapa o en el mundo, y junto al nivel de una criatura que puedes desollar.
+## Notes-esMX: Muestra tu habilidad y la requerida al pasar el cursor por una hierba o un mineral, en un pin del minimapa o en el mundo, y junto al nivel de una criatura que puedes desollar.
+## Notes-itIT: Mostra la tua abilità e quella richiesta quando passi su un'erba o un minerale, su un contrassegno della minimappa o nel mondo, e accanto al livello di una creatura che puoi scuoiare.
+## Notes-ptBR: Mostra sua perícia e a perícia necessária ao passar o mouse em uma erva ou minério, em um marcador do minimapa ou no mundo, e ao lado do nível de uma criatura que você pode esfolar.
+## Notes-koKR: 미니맵 핀이나 세계에서 약초나 광석에 커서를 올리면 내 숙련도와 필요 숙련도를 보여 줍니다. 무두질할 수 있는 생물의 레벨 옆에도 표시합니다.
+## Notes-zhCN: 将鼠标放在草药或矿石上时显示你的技能和所需技能，小地图标记和世界里的节点都有效。也会显示在可剥皮生物的等级旁边。
+## Notes-zhTW: 將滑鼠放在草藥或礦石上時顯示你的技能和所需技能，小地圖標記和世界裡的節點都有效。也會顯示在可剝皮生物的等級旁邊。
+## Author: GatherSkillTooltip
+## Version: 1.9.0
+## SavedVariables: GatherSkillTooltipDB
+## OptionalDeps: LibDataBroker-1.1, LibDBIcon-1.0
+## IconTexture: Interface\Icons\INV_Misc_Flower_02
+## AddonCompartmentFunc: GatherSkillTooltip_OnAddonCompartmentClick
+## AllowLoadGameType camelot
+## Category: Professions
+
+Data.lua
+Locales.lua
+Core.lua
+Options.lua
