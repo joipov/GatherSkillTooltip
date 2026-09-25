@@ -36,7 +36,9 @@ Loaded in TOC order; modules communicate only through the shared `ns` table.
 | File | Concern |
 | --- | --- |
 | `Data.lua` | Skill line / spell ids, node tables (`NODES`, `NODE_BY_KEY`) |
-| `Locales.lua` | Strings, node name aliases, `ns.LOOKUP` |
+| `Locales/enUS.lua` | English strings, `ns.LOOKUP`, `ns.RegisterLocale` |
+| `Locales/<locale>.lua` | Per-locale strings and node aliases; only the client's locale is loaded (`[AllowLoadTextLocale]`) |
+| `Locales.lua` | Post-locale lookups (creature types, "Skinnable" text, spell/profession names) |
 | `Database.lua` | SavedVariables defaults, migrations, validation |
 | `TooltipText.lua` | Secret-value guards, text stripping, colors, tooltip access |
 | `Skills.lua` | Cached profession ranks |
