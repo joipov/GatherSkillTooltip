@@ -8,7 +8,6 @@ local issecrettable = issecrettable
 local canaccesstable = canaccesstable
 local C_Timer = C_Timer
 local C_Minimap = C_Minimap
-local C_UnitAuras = C_UnitAuras
 local GetTime = GetTime
 local UnitIsPlayer = UnitIsPlayer
 local UnitPlayerControlled = UnitPlayerControlled
@@ -652,24 +651,14 @@ local function EnsureWarningFrame()
 	warningText:SetJustifyH("CENTER")
 end
 
-local function HasTrackingBuff(spellID)
-	if not C_UnitAuras or not C_UnitAuras.GetPlayerAuraBySpellID then
-		return false
-	end
-	-- Truthiness only: the return can be a secret value in combat
-	-- (SecretWhenUnitAuraRestricted), and comparing a secret errors (CQ-003).
-	local aura = C_UnitAuras.GetPlayerAuraBySpellID(spellID)
-	if aura then
-		return true
-	end
-	return false
-end
-
-local function MinimapTrackingActive(herbSpell, mineSpell)
+-- Tracking state comes from the minimap tracking list only (COMPAT-002).
+-- C_UnitAuras.GetPlayerAuraBySpellID is RequiresNonSecretAura in this build,
+-- so it returns nothing in combat and only duplicates this answer otherwise.
+-- C_Minimap.GetTrackingInfo carries no secret flags.
+local function TrackingState()
+	local herbSpell = ns.FIND_HERBS_SPELL
+	local mineSpell = ns.FIND_MINERALS_SPELL
 	local herbOn, mineOn = false, false
-	if not C_Minimap or not C_Minimap.GetNumTrackingTypes or not C_Minimap.GetTrackingInfo then
-		return herbOn, mineOn
-	end
 	for i = 1, C_Minimap.GetNumTrackingTypes() do
 		local info = C_Minimap.GetTrackingInfo(i)
 		if type(info) == "table" and info.active then
@@ -686,23 +675,25 @@ local function MinimapTrackingActive(herbSpell, mineSpell)
 	return herbOn, mineOn
 end
 
-local function TrackingState()
-	local herbSpell = ns.FIND_HERBS_SPELL
-	local mineSpell = ns.FIND_MINERALS_SPELL
-	local herbOn = HasTrackingBuff(herbSpell)
-	local mineOn = HasTrackingBuff(mineSpell)
-	if herbOn and mineOn then
-		return herbOn, mineOn
-	end
-	local mapHerb, mapMine = MinimapTrackingActive(herbSpell, mineSpell)
-	return herbOn or mapHerb, mineOn or mapMine
-end
-
 local CheckTracking
+
+-- Debug instrumentation for COMPAT-002: which event caused the last visible
+-- warning change. If UNIT_AURA never appears here over a full session, the
+-- UNIT_AURA registration in SetTrackingEvents can be dropped.
+local trackingTrigger
+
+local function DebugTrackingChange(what)
+	if ns.db and ns.db.debug then
+		print("|cff88ccff" .. ns.TITLE .. ":|r tracking warning", what, "after", trackingTrigger or "watchdog/other")
+	end
+end
 
 local function HideWarning()
 	lastWarningKey = nil
 	warningElapsed = 0
+	if warningFrame and warningFrame:IsShown() then
+		DebugTrackingChange("hidden")
+	end
 	if warningFrame then
 		warningFrame:SetScript("OnUpdate", nil)
 		warningFrame:Hide()
@@ -725,6 +716,9 @@ local function ShowWarning(message)
 	end
 	warningElapsed = 0
 	warningFrame:SetScript("OnUpdate", WarningWatchdogOnUpdate)
+	if not warningFrame:IsShown() then
+		DebugTrackingChange("shown")
+	end
 	warningFrame:Show()
 end
 
@@ -800,6 +794,7 @@ local TRACKING_CHECK_DELAY = 0.5
 local function OnTrackingTimer()
 	trackingTimer = nil
 	CheckTracking()
+	trackingTrigger = nil
 end
 
 -- Coalesces bursts of tracking-related events into one check (PERF-001):
@@ -1345,6 +1340,7 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, _, arg3)
 	end
 
 	if TRACKING_QUEUE_EVENTS[event] then
+		trackingTrigger = event
 		ns.QueueTrackingCheck()
 		return
 	end
