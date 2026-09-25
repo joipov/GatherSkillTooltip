@@ -10,10 +10,18 @@ exclude_files = {
 	".annotations/",
 }
 
--- Unit tests run under plain LuaJIT and use io/arg/loadfile.
+-- Unit tests run under plain Lua 5.1 / LuaJIT and stub the few WoW globals
+-- the loaded files bind at load time.
 files["tests/"] = {
-	std = "+luajit",
-	globals = { "arg" },
+	std = "lua51",
+	globals = {
+		"issecretvalue",
+		"canaccessvalue",
+		"issecrettable",
+		"canaccesstable",
+		"C_Spell",
+		"C_TradeSkillUI",
+	},
 }
 
 -- Globals written on purpose.
