@@ -98,12 +98,111 @@ local GATHER_WATCH_SECONDS = 1
 -- window (CQ-001). Hovering an unknown object or an ambiguous pin stack clears it.
 local NODE_KEY_SECONDS = 15
 
+-- Bump when a one-time SavedVariables migration is added to MigrateDB.
+local DB_VERSION = 2
+
+-- Applies defaults and resets any option whose type no longer matches its
+-- default (all options are booleans or numbers), so a corrupted or hand-edited
+-- SavedVariables file recovers instead of erroring later (CQ-005).
 local function CopyDefaults(db)
 	for key, value in pairs(defaults) do
-		if db[key] == nil then
+		if type(db[key]) ~= type(value) then
 			db[key] = value
 		end
 	end
+	return db
+end
+
+-- Converts legacy string keys ("71") in a count bucket to numeric keys,
+-- summing when both forms exist.
+local function NumericKeys(bucket)
+	local fixed = {}
+	for key, count in pairs(bucket) do
+		local skill = tonumber(key)
+		if skill and type(count) == "number" then
+			fixed[skill] = (fixed[skill] or 0) + count
+		end
+	end
+	return fixed
+end
+
+local function ValidateGather(gather)
+	for key, obs in pairs(gather) do
+		if type(key) ~= "string" or type(obs) ~= "table" then
+			gather[key] = nil
+		else
+			obs.misses = type(obs.misses) == "table" and obs.misses or {}
+			obs.gains = type(obs.gains) == "table" and obs.gains or {}
+			if type(obs.gainedAt) ~= "number" then
+				obs.gainedAt = nil
+			end
+		end
+	end
+end
+
+local function ValidateSkinIds(skinIds)
+	for key, value in pairs(skinIds) do
+		if type(key) ~= "number" or type(value) ~= "boolean" then
+			skinIds[key] = nil
+		end
+	end
+end
+
+local function ValidateMinimapIcon(icon)
+	if type(icon.minimapPos) ~= "number" then
+		icon.minimapPos = nil
+	end
+	if type(icon.hide) ~= "boolean" then
+		icon.hide = nil
+	end
+end
+
+-- One-time migrations keyed on db.version (CQ-004, ARCH-006). Runs before
+-- validation so legacy shapes are converted rather than discarded.
+local function MigrateDB(db)
+	local version = type(db.version) == "number" and db.version or 1
+	if version < 2 then
+		-- 1.x: the default fallback-button angle moved from 220 to 200.
+		if db.minimapAngle == 220 then
+			db.minimapAngle = 200
+		end
+		-- 1.x: LibDBIcon positions in the old 210-220 default band were
+		-- re-aligned with minimapAngle on every load; do it once here.
+		if type(db.minimapIcon) == "table" then
+			local pos = db.minimapIcon.minimapPos
+			if type(pos) == "number" and pos >= 210 and pos <= 220 then
+				db.minimapIcon.minimapPos = db.minimapAngle
+			end
+		end
+		-- 1.x: early builds stored skill counts under string keys.
+		if type(db.gather) == "table" then
+			for _, obs in pairs(db.gather) do
+				if type(obs) == "table" then
+					if type(obs.misses) == "table" then
+						obs.misses = NumericKeys(obs.misses)
+					end
+					if type(obs.gains) == "table" then
+						obs.gains = NumericKeys(obs.gains)
+					end
+				end
+			end
+		end
+	end
+	db.version = DB_VERSION
+end
+
+local function LoadDB(saved)
+	local db = type(saved) == "table" and saved or {}
+	MigrateDB(db)
+	CopyDefaults(db)
+	for _, key in ipairs({ "gather", "skinIds", "minimapIcon" }) do
+		if type(db[key]) ~= "table" then
+			db[key] = {}
+		end
+	end
+	ValidateGather(db.gather)
+	ValidateSkinIds(db.skinIds)
+	ValidateMinimapIcon(db.minimapIcon)
 	return db
 end
 
@@ -215,13 +314,7 @@ local function TitleLine(name, skill, required)
 end
 
 local function CountAt(bucket, skill)
-	if type(bucket) ~= "table" then
-		return 0
-	end
 	local n = bucket[skill]
-	if type(n) ~= "number" then
-		n = bucket[tostring(skill)]
-	end
 	if type(n) ~= "number" then
 		return 0
 	end
@@ -230,7 +323,7 @@ end
 
 local function GatherObs(key)
 	local db = ns.db
-	if not db or not db.gather or not key then
+	if not db or not key then
 		return nil
 	end
 	return db.gather[key]
@@ -827,17 +920,27 @@ local function UpdateMinimapButtonPosition()
 	if minimapBtn:GetParent() ~= Minimap then
 		return
 	end
-	local angle = math.rad(ns.db and ns.db.minimapAngle or 200)
+	local angle = math.rad(ns.db.minimapAngle)
 	local radius = (Minimap:GetWidth() / 2) + 10
 	minimapBtn:ClearAllPoints()
 	minimapBtn:SetPoint("CENTER", Minimap, "CENTER", math.cos(angle) * radius, math.sin(angle) * radius)
 end
 
+-- `showMinimapButton` is the only user-facing setting; `minimapIcon.hide` is
+-- the derived field LibDBIcon reads from its db table (ARCH-006). This is the
+-- single place that derives it.
+local function MinimapIconDB()
+	local icon = ns.db.minimapIcon
+	icon.hide = not ns.db.showMinimapButton
+	return icon
+end
+
 function ns.UpdateMinimapButton()
+	if not ns.db then
+		return
+	end
 	if ldbIcon then
-		ns.db.minimapIcon = ns.db.minimapIcon or {}
-		ns.db.minimapIcon.hide = not (ns.db and ns.db.showMinimapButton)
-		if ns.db.minimapIcon.hide then
+		if MinimapIconDB().hide then
 			ldbIcon:Hide(ns.TITLE)
 		else
 			ldbIcon:Show(ns.TITLE)
@@ -885,14 +988,13 @@ local function TryLibDBIcon()
 		return false
 	end
 
-	ns.db.minimapIcon = ns.db.minimapIcon or {}
-	ns.db.minimapIcon.hide = ns.db.showMinimapButton == false
-	local pos = ns.db.minimapIcon.minimapPos
-	if not pos or (pos >= 210 and pos <= 220) then
-		ns.db.minimapIcon.minimapPos = ns.db.minimapAngle or 200
+	local iconDB = MinimapIconDB()
+	if not iconDB.minimapPos then
+		-- First use with LibDBIcon: carry over the fallback button's angle.
+		iconDB.minimapPos = ns.db.minimapAngle
 	end
 	if not icon:IsRegistered(ns.TITLE) then
-		icon:Register(ns.TITLE, obj, ns.db.minimapIcon)
+		icon:Register(ns.TITLE, obj, iconDB)
 	end
 	ldbIcon = icon
 	minimapBtn = icon.GetMinimapButton and icon:GetMinimapButton(ns.TITLE)
@@ -977,14 +1079,11 @@ local function NoteGatherResult(key, skill, gained)
 	if not db or not key or type(skill) ~= "number" then
 		return
 	end
-	db.gather = db.gather or {}
 	local obs = db.gather[key]
 	if not obs then
-		obs = { misses = {} }
+		obs = { misses = {}, gains = {} }
 		db.gather[key] = obs
 	end
-	obs.misses = obs.misses or {}
-	obs.gains = obs.gains or {}
 	if gained then
 		obs.gains[skill] = CountAt(obs.gains, skill) + 1
 		if not obs.gainedAt or skill > obs.gainedAt then
@@ -1101,11 +1200,8 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, _, arg3)
 		if arg1 ~= ADDON_NAME then
 			return
 		end
-		_G.GatherSkillTooltipDB = CopyDefaults(_G.GatherSkillTooltipDB or {})
+		_G.GatherSkillTooltipDB = LoadDB(_G.GatherSkillTooltipDB)
 		ns.db = _G.GatherSkillTooltipDB
-		if ns.db.minimapAngle == 220 then
-			ns.db.minimapAngle = 200
-		end
 		eventFrame:UnregisterEvent("ADDON_LOADED")
 		eventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 		eventFrame:RegisterEvent("SKILL_LINES_CHANGED")
@@ -1300,9 +1396,8 @@ local function CanSkinUnit(unit, data)
 	if SecretBlocked(controlled) or controlled then
 		return false
 	end
-	local cache = ns.db and ns.db.skinIds
 	local npcID = UnitNpcID(unit, data)
-	local known = cache and npcID and cache[npcID]
+	local known = npcID and ns.db.skinIds[npcID]
 	if known == false then
 		return false
 	end
@@ -1440,7 +1535,6 @@ local function LearnSkin(tooltip, data)
 	if not npcID then
 		return
 	end
-	db.skinIds = db.skinIds or {}
 	local previous = db.skinIds[npcID]
 	local name = UnitName and ReadableString(UnitName(unit)) or tostring(npcID)
 	if TooltipHasSkinnable(tooltip, data) then
