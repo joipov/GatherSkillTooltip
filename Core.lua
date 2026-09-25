@@ -241,9 +241,6 @@ local function RefreshSkills()
 	ns.skills.mineMax = nil
 	ns.skills.skinMax = nil
 	skillsRefreshed = true
-	if not GetProfessions or not GetProfessionInfo then
-		return
-	end
 	local prof1, prof2 = GetProfessions()
 	CacheProfession(prof1)
 	CacheProfession(prof2)
@@ -406,10 +403,7 @@ local function FormatNode(name, node)
 end
 
 local function SecretBlocked(value)
-	if not issecretvalue then
-		return false
-	end
-	return issecretvalue(value) and not (canaccessvalue and canaccessvalue(value))
+	return issecretvalue(value) and not canaccessvalue(value)
 end
 
 local function ReadableString(value)
@@ -426,7 +420,7 @@ local function CanIndex(value)
 	if value == nil or SecretBlocked(value) then
 		return false
 	end
-	if issecrettable and issecrettable(value) and not (canaccesstable and canaccesstable(value)) then
+	if issecrettable(value) and not canaccesstable(value) then
 		return false
 	end
 	return true
@@ -436,11 +430,12 @@ local function FontStringByIndex(tooltip, index)
 	if SecretBlocked(index) then
 		return nil
 	end
+	-- Lines 1-2 have parentKeys; later lines only exist as named globals.
 	local fs = tooltip["TextLeft" .. index]
 	if fs then
 		return fs
 	end
-	local name = tooltip.GetName and ReadableString(tooltip:GetName())
+	local name = ReadableString(tooltip:GetName())
 	if not name then
 		return nil
 	end
@@ -464,7 +459,7 @@ local function PrimaryTooltipData(tooltip)
 end
 
 local function LastLineText(tooltip)
-	local count = tooltip.NumLines and tooltip:NumLines()
+	local count = tooltip:NumLines()
 	if SecretBlocked(count) or type(count) ~= "number" or count < 1 then
 		return nil
 	end
@@ -565,7 +560,7 @@ end
 -- the first line names the world object the player is about to interact with.
 local function ApplyTooltip(tooltip, data, trackNode)
 	local db = ns.db
-	if not db or not db.enabled or not tooltip or not tooltip.GetName then
+	if not db or not db.enabled or not tooltip then
 		return false
 	end
 	if not data then
@@ -956,7 +951,7 @@ end
 local ICON_TEXTURE = "Interface\\Icons\\INV_Misc_Flower_02"
 
 local function UpdateMinimapButtonPosition()
-	if not minimapBtn or not Minimap or ldbIcon then
+	if not minimapBtn or ldbIcon then
 		return
 	end
 	if minimapBtn:GetParent() ~= Minimap then
@@ -1049,9 +1044,6 @@ local function CreateMinimapButton()
 		return
 	end
 	if TryLibDBIcon() then
-		return
-	end
-	if not Minimap then
 		return
 	end
 
@@ -1232,7 +1224,7 @@ local function FinishGatherWatch(entry, gained)
 end
 
 local function DeadCreatureLevel(unit)
-	if UnitExists and not UnitExists(unit) then
+	if not UnitExists(unit) then
 		return nil
 	end
 	local player = UnitIsPlayer(unit)
@@ -1458,7 +1450,7 @@ local function UsableLevel(level)
 end
 
 local function LevelLine(tooltip, level)
-	local count = tooltip.NumLines and tooltip:NumLines()
+	local count = tooltip:NumLines()
 	if SecretBlocked(count) or type(count) ~= "number" or count < 2 then
 		return nil
 	end
@@ -1499,11 +1491,9 @@ local function NpcIdFromGUID(guid)
 end
 
 local function UnitNpcID(unit, data)
-	if UnitGUID and type(unit) == "string" then
-		local id = NpcIdFromGUID(UnitGUID(unit))
-		if id then
-			return id
-		end
+	local id = NpcIdFromGUID(UnitGUID(unit))
+	if id then
+		return id
 	end
 	if data and CanIndex(data) then
 		return NpcIdFromGUID(data.guid)
@@ -1563,13 +1553,11 @@ local function SkinningOrange(level)
 end
 
 local function UnitFromTooltip(tooltip, data)
-	if tooltip.GetUnit then
-		local _, unit = tooltip:GetUnit()
-		if type(unit) == "string" and not SecretBlocked(unit) then
-			return unit
-		end
+	local _, unit = tooltip:GetUnit()
+	if type(unit) == "string" and not SecretBlocked(unit) then
+		return unit
 	end
-	if not data or not UnitTokenFromGUID then
+	if not data then
 		return nil
 	end
 	local guid = data.guid
@@ -1602,7 +1590,7 @@ local function TooltipHasSkinnable(tooltip, data)
 		end
 		return false
 	end
-	local count = tooltip.NumLines and tooltip:NumLines()
+	local count = tooltip:NumLines()
 	if SecretBlocked(count) or type(count) ~= "number" then
 		return false
 	end
@@ -1612,7 +1600,7 @@ local function TooltipHasSkinnable(tooltip, data)
 			return true
 		end
 		local right = tooltip["TextRight" .. i]
-		if not right and tooltip.GetName then
+		if not right then
 			local name = ReadableString(tooltip:GetName())
 			right = name and _G[name .. "TextRight" .. i]
 		end
@@ -1624,28 +1612,11 @@ local function TooltipHasSkinnable(tooltip, data)
 end
 
 local function CorpseIsOurs(unit)
-	if UnitIsTapDenied then
-		local denied = UnitIsTapDenied(unit)
-		if SecretBlocked(denied) then
-			return false
-		end
-		return not denied
-	end
-	if not UnitIsTapped or not UnitIsTappedByPlayer then
+	local denied = UnitIsTapDenied(unit)
+	if SecretBlocked(denied) then
 		return false
 	end
-	local tapped = UnitIsTapped(unit)
-	if SecretBlocked(tapped) then
-		return false
-	end
-	if not tapped then
-		return true
-	end
-	local byPlayer = UnitIsTappedByPlayer(unit)
-	if SecretBlocked(byPlayer) then
-		return false
-	end
-	return not not byPlayer
+	return not denied
 end
 
 local function LearnChat(text)
@@ -1662,7 +1633,7 @@ local function LearnSkin(tooltip, data, unit, dead, npcID)
 		return
 	end
 	local previous = db.skinIds[npcID]
-	local name = UnitName and ReadableString(UnitName(unit)) or tostring(npcID)
+	local name = ReadableString(UnitName(unit)) or tostring(npcID)
 	if TooltipHasSkinnable(tooltip, data) then
 		if previous ~= true then
 			db.skinIds[npcID] = true
@@ -1824,24 +1795,12 @@ local function OnUnitTooltip(tooltip, data)
 	ApplySkinningLine(tooltip, unit, dead, npcID)
 end
 
-if TooltipDataProcessor and Enum and Enum.TooltipDataType then
-	if Enum.TooltipDataType.MinimapMouseover then
-		TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.MinimapMouseover, OnObjectTooltip)
-	end
-	if Enum.TooltipDataType.Object then
-		TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Object, OnObjectTooltip)
-	end
-	if Enum.TooltipDataType.Unit then
-		TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Unit, OnUnitTooltip)
-	end
-	if Enum.TooltipDataType.Corpse then
-		TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Corpse, OnUnitTooltip)
-	end
-end
-
-if GameTooltip and not (Enum and Enum.TooltipDataType and Enum.TooltipDataType.Unit) then
-	GameTooltip:HookScript("OnTooltipSetUnit", OnUnitTooltip)
-end
+TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.MinimapMouseover, OnObjectTooltip)
+TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Object, OnObjectTooltip)
+TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Unit, OnUnitTooltip)
+-- UI-002: dead NPCs arrive as Unit tooltips; Corpse is kept until an in-game
+-- check confirms it never carries a resolvable unit (then remove this line).
+TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Corpse, OnUnitTooltip)
 
 -- UI-001: fallback for GameTooltip shows that carry no tooltip data. Typed
 -- tooltips (Object, MinimapMouseover, Unit, ...) are handled by the post-calls

@@ -1,29 +1,17 @@
 local _, ns = ...
 
-local Settings = _G["Settings"]
-local CreateSettingsListSectionHeaderInitializer = _G["CreateSettingsListSectionHeaderInitializer"]
-
-local TRUE = (Settings and Settings.Default and Settings.Default.True) or true
-local FALSE = (Settings and Settings.Default and Settings.Default.False) or false
+local Settings = Settings
+local CreateSettingsListSectionHeaderInitializer = CreateSettingsListSectionHeaderInitializer
 
 function ns.OpenSettings()
-	if not ns.settingsCategory and ns.InitOptions then
+	if not ns.settingsCategory then
 		ns.InitOptions()
 	end
 	if not ns.settingsCategory then
 		print("|cff88ccff" .. ns.TITLE .. ":|r " .. ns.L.OPEN_FAILED)
 		return
 	end
-	local id = ns.settingsCategory.GetID and ns.settingsCategory:GetID()
-	if type(id) ~= "number" then
-		print("|cff88ccff" .. ns.TITLE .. ":|r " .. ns.L.OPEN_FAILED)
-		return
-	end
-	if Settings and Settings.OpenToCategory then
-		Settings.OpenToCategory(id)
-		return
-	end
-	print("|cff88ccff" .. ns.TITLE .. ":|r " .. ns.L.OPEN_FAILED)
+	Settings.OpenToCategory(ns.settingsCategory:GetID())
 end
 
 function _G.GatherSkillTooltip_OnAddonCompartmentClick()
@@ -31,7 +19,7 @@ function _G.GatherSkillTooltip_OnAddonCompartmentClick()
 end
 
 function ns.InitOptions()
-	if ns.settingsCategory or not Settings or not Settings.RegisterVerticalLayoutCategory then
+	if ns.settingsCategory then
 		return
 	end
 
@@ -48,7 +36,7 @@ function ns.InitOptions()
 
 	local function AddCheckbox(key, label, tooltip, default)
 		if default == nil then
-			default = TRUE
+			default = true
 		end
 		local setting = Settings.RegisterAddOnSetting(
 			category,
@@ -69,18 +57,12 @@ function ns.InitOptions()
 				ns.HideTrainWarning()
 			end
 		end
-		if setting.SetValueChangedCallback then
-			setting:SetValueChangedCallback(OnChanged)
-		elseif Settings.SetOnValueChangedCallback and setting.GetVariable then
-			Settings.SetOnValueChangedCallback(setting:GetVariable(), OnChanged)
-		end
+		setting:SetValueChangedCallback(OnChanged)
 		return Settings.CreateCheckbox(category, setting, tooltip), setting
 	end
 
 	local function AddHeader(text)
-		if layout and CreateSettingsListSectionHeaderInitializer then
-			layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(text))
-		end
+		layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(text))
 	end
 
 	local enabledCheckbox, enabledSetting = AddCheckbox(
@@ -92,7 +74,7 @@ function ns.InitOptions()
 		"showMinimapButton",
 		L.SHOW_MINIMAP,
 		L.SHOW_MINIMAP_TIP,
-		FALSE
+		false
 	)
 
 	AddHeader(L.HEADER_PROFESSIONS)
@@ -104,7 +86,7 @@ function ns.InitOptions()
 	local currentCheckbox = AddCheckbox("showCurrent", L.SHOW_CURRENT, L.SHOW_CURRENT_TIP:format(example))
 	local requiredCheckbox = AddCheckbox("showRequired", L.SHOW_REQUIRED, L.SHOW_REQUIRED_TIP:format(example))
 	local colorCheckbox = AddCheckbox("color", L.COLOR, L.COLOR_TIP)
-	local learnCheckbox = AddCheckbox("learnChat", L.LEARN_CHAT, L.LEARN_CHAT_TIP, FALSE)
+	local learnCheckbox = AddCheckbox("learnChat", L.LEARN_CHAT, L.LEARN_CHAT_TIP, false)
 
 	AddHeader(L.HEADER_TRACKING)
 	local warnCheckbox = AddCheckbox(
@@ -122,26 +104,22 @@ function ns.InitOptions()
 
 	Settings.RegisterAddOnCategory(category)
 
-	if enabledCheckbox and enabledCheckbox.SetParentInitializer then
-		local function MasterEnabled()
-			return enabledSetting:GetValue()
-		end
-		for _, child in ipairs({
-			herbCheckbox,
-			mineCheckbox,
-			skinCheckbox,
-			currentCheckbox,
-			requiredCheckbox,
-			colorCheckbox,
-			learnCheckbox,
-			warnCheckbox,
-			trainCheckbox,
-			minimapCheckbox,
-		}) do
-			if child and child.SetParentInitializer then
-				child:SetParentInitializer(enabledCheckbox, MasterEnabled)
-			end
-		end
+	local function MasterEnabled()
+		return enabledSetting:GetValue()
+	end
+	for _, child in ipairs({
+		herbCheckbox,
+		mineCheckbox,
+		skinCheckbox,
+		currentCheckbox,
+		requiredCheckbox,
+		colorCheckbox,
+		learnCheckbox,
+		warnCheckbox,
+		trainCheckbox,
+		minimapCheckbox,
+	}) do
+		child:SetParentInitializer(enabledCheckbox, MasterEnabled)
 	end
 end
 
