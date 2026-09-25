@@ -249,12 +249,14 @@ local function RefreshSkills()
 	CacheProfession(prof2)
 end
 
-local function DifficultyColor(skill, node)
+-- `orange` is the effective orange threshold (see EffectiveOrange); the
+-- remaining thresholds come from the static band.
+local function DifficultyColor(skill, node, orange)
 	local yellow, green, grey = node.yellow, node.green, node.grey
 	if not yellow or not green or not grey then
 		return nil
 	end
-	if skill < node.orange then
+	if skill < (orange or node.orange) then
 		return COLOR_PREFIX.red
 	elseif skill < yellow then
 		return COLOR_PREFIX.orange
@@ -334,19 +336,15 @@ local function GainedAtOrAbove(obs, skill)
 	return type(obs.gainedAt) == "number" and obs.gainedAt >= skill
 end
 
-local function ApplyObservation(band, key)
+-- The orange threshold after applying learned data: a recorded skill-up at a
+-- lower skill than the table value lowers it. Returns a number, never a new
+-- table (PERF-004).
+local function EffectiveOrange(band, key)
 	local obs = GatherObs(key)
 	if not obs or type(obs.gainedAt) ~= "number" or obs.gainedAt >= band.orange then
-		return band
+		return band.orange
 	end
-	return {
-		orange = obs.gainedAt,
-		yellow = band.yellow,
-		green = band.green,
-		grey = band.grey,
-		prof = band.prof,
-		key = key,
-	}
+	return obs.gainedAt
 end
 
 local function ColorFromRate(gains, misses)
@@ -364,8 +362,8 @@ local function ColorFromRate(gains, misses)
 	return COLOR_PREFIX.green
 end
 
-local function ObservedColor(skill, band, key)
-	local color = DifficultyColor(skill, band)
+local function ObservedColor(skill, band, orange, key)
+	local color = DifficultyColor(skill, band, orange)
 	local obs = GatherObs(key)
 	if not obs then
 		return color
@@ -403,8 +401,8 @@ local function FormatNode(name, node)
 	if type(skill) ~= "number" then
 		return nil
 	end
-	local shown = ApplyObservation(node, node.key)
-	return TitleLine(name, skill, shown.orange), ObservedColor(skill, shown, node.key)
+	local orange = EffectiveOrange(node, node.key)
+	return TitleLine(name, skill, orange), ObservedColor(skill, node, orange, node.key)
 end
 
 local function SecretBlocked(value)
@@ -742,6 +740,24 @@ local function SetTrackingEvents(active)
 	end
 end
 
+-- Warning texts are built once the spell name is available and then reused
+-- by the 1 Hz watchdog (PERF-003). A fallback-name result is not cached so
+-- the real spell name is picked up once the client has it.
+local spellOffMessages = {}
+
+local function SpellOffMessage(key, spellID, fallback)
+	local cached = spellOffMessages[key]
+	if cached then
+		return cached
+	end
+	local name = ns.SpellName(spellID, fallback)
+	local message = ns.L.SPELL_OFF:format(name)
+	if name ~= fallback then
+		spellOffMessages[key] = message
+	end
+	return message
+end
+
 CheckTracking = function()
 	local db = ns.db
 	if not db or not db.enabled or not db.warnTracking then
@@ -773,13 +789,13 @@ CheckTracking = function()
 			HideWarning()
 			return
 		end
-		message = L.SPELL_OFF:format(ns.SpellName(ns.FIND_HERBS_SPELL, L.FIND_HERBS))
+		message = SpellOffMessage("herb", ns.FIND_HERBS_SPELL, L.FIND_HERBS)
 	else
 		if mineOn then
 			HideWarning()
 			return
 		end
-		message = L.SPELL_OFF:format(ns.SpellName(ns.FIND_MINERALS_SPELL, L.FIND_MINERALS))
+		message = SpellOffMessage("mine", ns.FIND_MINERALS_SPELL, L.FIND_MINERALS)
 	end
 
 	if message == lastWarningKey and warningFrame and warningFrame:IsShown() then
@@ -1512,10 +1528,7 @@ local function SkinnableCreatureType(unit)
 	return byID or byName
 end
 
-local function CanSkinUnit(unit, data)
-	if type(unit) ~= "string" or SecretBlocked(unit) then
-		return false
-	end
+local function CanSkinUnit(unit, dead, npcID)
 	local player = UnitIsPlayer(unit)
 	if SecretBlocked(player) or player then
 		return false
@@ -1524,16 +1537,11 @@ local function CanSkinUnit(unit, data)
 	if SecretBlocked(controlled) or controlled then
 		return false
 	end
-	local npcID = UnitNpcID(unit, data)
 	local known = npcID and ns.db.skinIds[npcID]
 	if known == false then
 		return false
 	end
 	if known ~= true and not SkinnableCreatureType(unit) then
-		return false
-	end
-	local dead = UnitIsDead(unit)
-	if SecretBlocked(dead) then
 		return false
 	end
 	if not dead then
@@ -1580,14 +1588,19 @@ local function TextHasSkinnable(text)
 	return text:find(word, 1, true) ~= nil
 end
 
+-- Prefers the tooltip data lines (the source the tooltip is rendered from);
+-- the font-string scan is only the fallback when the data is inaccessible
+-- (PERF-002: one scan per hover, not two).
 local function TooltipHasSkinnable(tooltip, data)
 	if data and CanIndex(data) and CanIndex(data.lines) then
-		for i = 1, #data.lines do
-			local line = data.lines[i]
+		local lines = data.lines
+		for i = 1, #lines do
+			local line = lines[i]
 			if CanIndex(line) and (TextHasSkinnable(line.leftText) or TextHasSkinnable(line.rightText)) then
 				return true
 			end
 		end
+		return false
 	end
 	local count = tooltip.NumLines and tooltip:NumLines()
 	if SecretBlocked(count) or type(count) ~= "number" then
@@ -1643,21 +1656,9 @@ local function LearnChat(text)
 	print("|cff88ccff" .. ns.TITLE .. ":|r " .. text)
 end
 
-local function LearnSkin(tooltip, data)
+local function LearnSkin(tooltip, data, unit, dead, npcID)
 	local db = ns.db
-	if not db or not db.enabled or not tooltip then
-		return
-	end
-	local unit = UnitFromTooltip(tooltip, data)
-	if not unit then
-		return
-	end
-	local dead = UnitIsDead(unit)
-	if SecretBlocked(dead) or not dead then
-		return
-	end
-	local npcID = UnitNpcID(unit, data)
-	if not npcID then
+	if not dead or not npcID then
 		return
 	end
 	local previous = db.skinIds[npcID]
@@ -1679,15 +1680,25 @@ local function LearnSkin(tooltip, data)
 	end
 end
 
+-- Static skinning bands, one table per creature level, created on first use
+-- and reused on every later hover (PERF-004). `key` is the learned-data key.
+local SKIN_BANDS = {}
+
 local function SkinningBand(level)
-	local orange = SkinningOrange(level)
-	return ApplyObservation({
-		orange = orange,
-		yellow = orange + 25,
-		green = orange + 50,
-		grey = orange + 100,
-		prof = "skin",
-	}, "skin:" .. level)
+	local band = SKIN_BANDS[level]
+	if not band then
+		local orange = SkinningOrange(level)
+		band = {
+			orange = orange,
+			yellow = orange + 25,
+			green = orange + 50,
+			grey = orange + 100,
+			prof = "skin",
+			key = "skin:" .. level,
+		}
+		SKIN_BANDS[level] = band
+	end
+	return band
 end
 
 local function ColorWord(prefix)
@@ -1721,14 +1732,7 @@ end
 local function GatherSubject(key)
 	local level = type(key) == "string" and key:match("^skin:(%d+)$")
 	if level then
-		local orange = SkinningOrange(tonumber(level))
-		return ns.L.LEARNED_LEVEL:format(level), {
-			orange = orange,
-			yellow = orange + 25,
-			green = orange + 50,
-			grey = orange + 100,
-			prof = "skin",
-		}
+		return ns.L.LEARNED_LEVEL:format(level), SkinningBand(tonumber(level))
 	end
 	local node = NodeByKey(key)
 	if not node then
@@ -1739,12 +1743,12 @@ end
 
 ReportGatherLearn = function(key, skill, gained)
 	local name, band = GatherSubject(key)
-	local before = name and ObservedColor(skill, ApplyObservation(band, key), key)
+	local before = name and ObservedColor(skill, band, EffectiveOrange(band, key), key)
 	NoteGatherResult(key, skill, gained)
 	if not name then
 		return
 	end
-	local after = ObservedColor(skill, ApplyObservation(band, key), key)
+	local after = ObservedColor(skill, band, EffectiveOrange(band, key), key)
 	if before == after then
 		return
 	end
@@ -1755,9 +1759,9 @@ ReportGatherLearn = function(key, skill, gained)
 	LearnChat(ns.L.LEARNED_COLOR:format(name, word, skill))
 end
 
-local function ApplySkinningLine(tooltip, data)
+local function ApplySkinningLine(tooltip, unit, dead, npcID)
 	local db = ns.db
-	if not db or not db.enabled or not db.skinning or not tooltip then
+	if not db.skinning then
 		return
 	end
 	if not skillsRefreshed then
@@ -1766,8 +1770,7 @@ local function ApplySkinningLine(tooltip, data)
 	if type(ns.skills.skin) ~= "number" then
 		return
 	end
-	local unit = UnitFromTooltip(tooltip, data)
-	if not unit or not CanSkinUnit(unit, data) then
+	if not CanSkinUnit(unit, dead, npcID) then
 		return
 	end
 	local level = UsableLevel(UnitLevel(unit))
@@ -1779,8 +1782,9 @@ local function ApplySkinningLine(tooltip, data)
 		return
 	end
 	lastSkinLevel = level
-	local shown = SkinningBand(level)
-	local suffix = SkillSuffix(ns.skills.skin, shown.orange)
+	local band = SkinningBand(level)
+	local orange = EffectiveOrange(band, band.key)
+	local suffix = SkillSuffix(ns.skills.skin, orange)
 	if not suffix then
 		return
 	end
@@ -1790,7 +1794,7 @@ local function ApplySkinningLine(tooltip, data)
 	end
 	local colored = suffix
 	if db.color then
-		colored = ColorWrap(suffix, ObservedColor(ns.skills.skin, shown, "skin:" .. level))
+		colored = ColorWrap(suffix, ObservedColor(ns.skills.skin, band, orange, band.key))
 	end
 	local display = base:sub(1, last) .. colored .. base:sub(last + 1)
 	if raw == display then
@@ -1799,9 +1803,25 @@ local function ApplySkinningLine(tooltip, data)
 	fs:SetText(display)
 end
 
+-- Unit and Corpse tooltips: resolve unit token, death state and NPC id once
+-- per hover and hand them to both consumers (PERF-002).
 local function OnUnitTooltip(tooltip, data)
-	LearnSkin(tooltip, data)
-	ApplySkinningLine(tooltip, data)
+	local db = ns.db
+	if not db or not db.enabled or not tooltip then
+		return
+	end
+	local unit = UnitFromTooltip(tooltip, data)
+	if not unit then
+		return
+	end
+	local dead = UnitIsDead(unit)
+	if SecretBlocked(dead) then
+		return
+	end
+	dead = dead and true or false
+	local npcID = UnitNpcID(unit, data)
+	LearnSkin(tooltip, data, unit, dead, npcID)
+	ApplySkinningLine(tooltip, unit, dead, npcID)
 end
 
 if TooltipDataProcessor and Enum and Enum.TooltipDataType then
