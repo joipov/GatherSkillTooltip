@@ -61,6 +61,7 @@ function ns.InitOptions()
 		)
 		local function OnChanged()
 			ns.QueueTrackingCheck()
+			ns.UpdateLootEvents()
 			if key == "showMinimapButton" then
 				ns.UpdateMinimapButton()
 			end
