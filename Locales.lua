@@ -1069,28 +1069,17 @@ UI = nil
 ALIASES = nil
 
 function ns.SpellName(spellID, fallback)
-	if C_Spell and C_Spell.GetSpellName then
-		local name = C_Spell.GetSpellName(spellID)
-		if name and name ~= "" then
-			return name
-		end
-	end
-	local GetSpellInfo = _G["GetSpellInfo"]
-	if GetSpellInfo then
-		local name = GetSpellInfo(spellID)
-		if name and name ~= "" then
-			return name
-		end
+	local name = C_Spell.GetSpellName(spellID)
+	if name and name ~= "" then
+		return name
 	end
 	return fallback
 end
 
 function ns.ProfessionName(skillLine, fallback)
-	if C_TradeSkillUI and C_TradeSkillUI.GetProfessionInfoBySkillLineID then
-		local info = C_TradeSkillUI.GetProfessionInfoBySkillLineID(skillLine)
-		if type(info) == "table" and info.professionName and info.professionName ~= "" then
-			return info.professionName
-		end
+	local info = C_TradeSkillUI.GetProfessionInfoBySkillLineID(skillLine)
+	if type(info) == "table" and info.professionName and info.professionName ~= "" then
+		return info.professionName
 	end
 	return fallback
 end
