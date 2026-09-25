@@ -1823,29 +1823,14 @@ if GameTooltip and not (Enum and Enum.TooltipDataType and Enum.TooltipDataType.U
 	GameTooltip:HookScript("OnTooltipSetUnit", OnUnitTooltip)
 end
 
-if GameTooltip then
-	local minimapType = Enum and Enum.TooltipDataType and Enum.TooltipDataType.MinimapMouseover
-	local objectType = Enum and Enum.TooltipDataType and Enum.TooltipDataType.Object
-	local postMinimap = TooltipDataProcessor and minimapType
-	local postObject = TooltipDataProcessor and objectType
+-- UI-001: fallback for GameTooltip shows that carry no tooltip data. Typed
+-- tooltips (Object, MinimapMouseover, Unit, ...) are handled by the post-calls
+-- above, so this only runs for UI tooltips. It is instrumented: if a full
+-- session reported by `/gst stats` shows 0 applied, this block can go.
+ns.fallbackStats = { shown = 0, checked = 0, applied = 0, retried = 0 }
+do
+	local stats = ns.fallbackStats
 	local retryPending = false
-
-	local function CoveredByPostCall(tooltipType)
-		if tooltipType == nil then
-			return false
-		end
-		if postMinimap and tooltipType == minimapType then
-			return true
-		end
-		if postObject and tooltipType == objectType then
-			return true
-		end
-		return false
-	end
-
-	local function IsKnownOtherTooltip(tooltipType)
-		return minimapType and objectType and tooltipType ~= nil and tooltipType ~= minimapType and tooltipType ~= objectType
-	end
 
 	local function TooltipLineReady(tooltip)
 		local fs = TooltipFontString(tooltip)
@@ -1859,34 +1844,46 @@ if GameTooltip then
 		return type(text) == "string" and text ~= ""
 	end
 
+	local function FallbackApply(tooltip, data)
+		stats.checked = stats.checked + 1
+		if ApplyTooltip(tooltip, data) then
+			stats.applied = stats.applied + 1
+			-- UI-002: outside a post-call the tooltip does not re-layout by itself.
+			tooltip:Show()
+		end
+	end
+
+	local function RetryFallback()
+		retryPending = false
+		local tooltip = GameTooltip
+		if not tooltip:IsShown() or not ns.db or not ns.db.enabled then
+			return
+		end
+		local data = PrimaryTooltipData(tooltip)
+		if data and data.type ~= nil then
+			return
+		end
+		FallbackApply(tooltip, data)
+	end
+
 	GameTooltip:HookScript("OnShow", function(tooltip)
 		if not ns.db or not ns.db.enabled then
 			return
 		end
+		stats.shown = stats.shown + 1
 		local data = PrimaryTooltipData(tooltip)
-		local tooltipType = data and data.type
-		if CoveredByPostCall(tooltipType) or IsKnownOtherTooltip(tooltipType) then
+		if data and data.type ~= nil then
 			return
 		end
-		if tooltipType ~= nil or TooltipLineReady(tooltip) then
-			ApplyTooltip(tooltip, data)
+		if TooltipLineReady(tooltip) then
+			FallbackApply(tooltip, data)
 			return
 		end
 		if retryPending then
 			return
 		end
 		retryPending = true
-		C_Timer.After(0, function()
-			retryPending = false
-			if not tooltip:IsShown() or not ns.db or not ns.db.enabled then
-				return
-			end
-			local retryData = PrimaryTooltipData(tooltip)
-			local retryType = retryData and retryData.type
-			if CoveredByPostCall(retryType) or IsKnownOtherTooltip(retryType) then
-				return
-			end
-			ApplyTooltip(tooltip, retryData)
-		end)
+		stats.retried = stats.retried + 1
+		C_Timer.After(0, RetryFallback)
 	end)
 end
