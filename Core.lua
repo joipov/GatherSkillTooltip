@@ -359,6 +359,18 @@ local function TooltipFontString(tooltip)
 	return FontStringByIndex(tooltip, 1)
 end
 
+-- GetPrimaryTooltipData is the current accessor; GetTooltipData is the
+-- "to be deprecated" alias (TooltipDataHandlerMixin, COMPAT-001).
+local function PrimaryTooltipData(tooltip)
+	if tooltip.GetPrimaryTooltipData then
+		return tooltip:GetPrimaryTooltipData()
+	end
+	if tooltip.GetTooltipData then
+		return tooltip:GetTooltipData()
+	end
+	return nil
+end
+
 local function LastLineText(tooltip)
 	local count = tooltip.NumLines and tooltip:NumLines()
 	if SecretBlocked(count) or type(count) ~= "number" or count < 1 then
@@ -464,8 +476,8 @@ local function ApplyTooltip(tooltip, data, trackNode)
 	if not db or not db.enabled or not tooltip or not tooltip.GetName then
 		return false
 	end
-	if not data and tooltip.GetTooltipData then
-		data = tooltip:GetTooltipData()
+	if not data then
+		data = PrimaryTooltipData(tooltip)
 	end
 
 	local raw, fs = FirstLine(tooltip, data)
@@ -549,7 +561,13 @@ local function HasTrackingBuff(spellID)
 	if not C_UnitAuras or not C_UnitAuras.GetPlayerAuraBySpellID then
 		return false
 	end
-	return C_UnitAuras.GetPlayerAuraBySpellID(spellID) ~= nil
+	-- Truthiness only: the return can be a secret value in combat
+	-- (SecretWhenUnitAuraRestricted), and comparing a secret errors (CQ-003).
+	local aura = C_UnitAuras.GetPlayerAuraBySpellID(spellID)
+	if aura then
+		return true
+	end
+	return false
 end
 
 local function MinimapTrackingActive(herbSpell, mineSpell)
@@ -1625,7 +1643,7 @@ if GameTooltip then
 		if not ns.db or not ns.db.enabled then
 			return
 		end
-		local data = tooltip.GetTooltipData and tooltip:GetTooltipData()
+		local data = PrimaryTooltipData(tooltip)
 		local tooltipType = data and data.type
 		if CoveredByPostCall(tooltipType) or IsKnownOtherTooltip(tooltipType) then
 			return
@@ -1643,7 +1661,7 @@ if GameTooltip then
 			if not tooltip:IsShown() or not ns.db or not ns.db.enabled then
 				return
 			end
-			local retryData = tooltip.GetTooltipData and tooltip:GetTooltipData()
+			local retryData = PrimaryTooltipData(tooltip)
 			local retryType = retryData and retryData.type
 			if CoveredByPostCall(retryType) or IsKnownOtherTooltip(retryType) then
 				return
