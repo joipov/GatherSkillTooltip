@@ -20,6 +20,8 @@
 ## Category: Professions
 
 Data.lua
+Locales\enUS.lua
+Locales\[TextLocale].lua [AllowLoadTextLocale deDE, esES, esMX, frFR, itIT, koKR, ptBR, zhCN, zhTW]
 Locales.lua
 Database.lua
 TooltipText.lua
