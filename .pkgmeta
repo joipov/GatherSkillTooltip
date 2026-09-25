@@ -1,0 +1,19 @@
+package-as: GatherSkillTooltip
+
+# Development-only files; everything else in the checkout ships in the zip.
+ignore:
+  - .annotations
+  - .github
+  - .luacheckrc
+  - .luarc.json
+  - .gitattributes
+  - tests
+  - CODE_AUDIT.md
+
+manual-changelog: CHANGELOG.md
+
+# LibDataBroker/LibDBIcon are optional and never embedded (see TOC
+# OptionalDeps); the addon falls back to its own button without them.
+optional-dependencies:
+  - libdatabroker-1-1
+  - libdbicon-1-0
