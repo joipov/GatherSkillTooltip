@@ -76,6 +76,7 @@ local COLOR_PREFIX = {
 	grey = ColorPrefix(COLORS.grey),
 }
 
+local eventFrame = CreateFrame("Frame")
 local warningFrame
 local warningText
 local trackingTimer
@@ -727,9 +728,30 @@ local function ShowWarning(message)
 	warningFrame:Show()
 end
 
+-- Tracking events are registered only while the warning feature can do
+-- anything (ARCH-002); UNIT_AURA in particular fires on every aura change.
+local trackingEventsActive = false
+
+local function SetTrackingEvents(active)
+	if active == trackingEventsActive then
+		return
+	end
+	trackingEventsActive = active
+	if active then
+		eventFrame:RegisterEvent("MINIMAP_UPDATE_TRACKING")
+		eventFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
+		eventFrame:RegisterUnitEvent("UNIT_AURA", "player")
+	else
+		eventFrame:UnregisterEvent("MINIMAP_UPDATE_TRACKING")
+		eventFrame:UnregisterEvent("PLAYER_REGEN_ENABLED")
+		eventFrame:UnregisterEvent("UNIT_AURA")
+	end
+end
+
 CheckTracking = function()
 	local db = ns.db
 	if not db or not db.enabled or not db.warnTracking then
+		SetTrackingEvents(false)
 		HideWarning()
 		return
 	end
@@ -738,9 +760,11 @@ CheckTracking = function()
 	local needHerb = db.herbalism and ns.skills.herb
 	local needMine = db.mining and ns.skills.mine
 	if not needHerb and not needMine then
+		SetTrackingEvents(false)
 		HideWarning()
 		return
 	end
+	SetTrackingEvents(true)
 
 	local herbOn, mineOn = TrackingState()
 	local message
@@ -771,14 +795,20 @@ CheckTracking = function()
 	ShowWarning(message)
 end
 
+local TRACKING_CHECK_DELAY = 0.5
+
+local function OnTrackingTimer()
+	trackingTimer = nil
+	CheckTracking()
+end
+
+-- Coalesces bursts of tracking-related events into one check (PERF-001):
+-- one pending timer, one shared callback, no per-event closures.
 function ns.QueueTrackingCheck()
 	if trackingTimer then
-		trackingTimer:Cancel()
+		return
 	end
-	trackingTimer = C_Timer.NewTimer(0.5, function()
-		trackingTimer = nil
-		CheckTracking()
-	end)
+	trackingTimer = C_Timer.NewTimer(TRACKING_CHECK_DELAY, OnTrackingTimer)
 end
 
 local TRAIN_SECONDS = 4
@@ -1119,6 +1149,28 @@ local function OnLootClosed()
 	lootedCorpses[guid] = now
 end
 
+local lootEventsActive = false
+
+-- Loot events are only needed while skinning learning can run (ARCH-002).
+function ns.UpdateLootEvents()
+	local db = ns.db
+	local active = (db and db.enabled and db.skinning) and true or false
+	if active == lootEventsActive then
+		return
+	end
+	lootEventsActive = active
+	if active then
+		eventFrame:RegisterEvent("LOOT_OPENED")
+		eventFrame:RegisterEvent("LOOT_SLOT_CLEARED")
+		eventFrame:RegisterEvent("LOOT_CLOSED")
+	else
+		eventFrame:UnregisterEvent("LOOT_OPENED")
+		eventFrame:UnregisterEvent("LOOT_SLOT_CLEARED")
+		eventFrame:UnregisterEvent("LOOT_CLOSED")
+		pendingLootGuid = nil
+	end
+end
+
 local function CorpseLooted(unit, data)
 	local guid = ReadableString(UnitGUID(unit))
 	if not guid and data and CanIndex(data) then
@@ -1246,7 +1298,6 @@ local function NoteGatherSkill()
 	return false
 end
 
-local eventFrame = CreateFrame("Frame")
 eventFrame:RegisterEvent("ADDON_LOADED")
 eventFrame:SetScript("OnEvent", function(_, event, arg1, _, arg3)
 	if event == "ADDON_LOADED" then
@@ -1259,16 +1310,11 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, _, arg3)
 		eventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 		eventFrame:RegisterEvent("SKILL_LINES_CHANGED")
 		eventFrame:RegisterEvent("CHAT_MSG_SKILL")
-		eventFrame:RegisterEvent("MINIMAP_UPDATE_TRACKING")
-		eventFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
-		eventFrame:RegisterUnitEvent("UNIT_AURA", "player")
 		eventFrame:RegisterUnitEvent("UNIT_SPELLCAST_START", "player")
 		eventFrame:RegisterUnitEvent("UNIT_SPELLCAST_SUCCEEDED", "player")
 		eventFrame:RegisterUnitEvent("UNIT_SPELLCAST_INTERRUPTED", "player")
 		eventFrame:RegisterUnitEvent("UNIT_SPELLCAST_FAILED", "player")
-		eventFrame:RegisterEvent("LOOT_OPENED")
-		eventFrame:RegisterEvent("LOOT_SLOT_CLEARED")
-		eventFrame:RegisterEvent("LOOT_CLOSED")
+		ns.UpdateLootEvents()
 		if ns.InitOptions then
 			ns.InitOptions()
 		end
