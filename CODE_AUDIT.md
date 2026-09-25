@@ -392,3 +392,48 @@ Snippets (paste in chat; `/gst debug` is not required):
 | `collectgarbage("count")` delta, 1 min combat, addon off | not yet measured in-game | | |
 
 Rules: fill cells only with values read from the client; leave "not yet measured in-game" otherwise. No percentages are claimed anywhere in this document until both columns of a row are filled.
+
+The "After Phase 2" and "After Phase 5" columns are also still empty: no game client was available during the implementation session. Measure "After Phase 5" on the current `main` (2.0.0) with the same snippets and session; measure "After Phase 2" only if a regression needs bisecting (`git checkout 386a5fc`).
+
+---
+
+## Appendix B: Implementation record (Phases 1-5)
+
+All remediation items were implemented on branch `main` of `%USERPROFILE%\dev\GatherSkillTooltip`, one commit per item group, from tag `v1.9.0-baseline` to version 2.0.0. Static checks at the end of the session: `luacheck .` 0 warnings / 0 errors in 24 files; `luajit tests/run.lua` 18 passed; every TOC file compiles under LuaJIT 2.1; an offline smoke run (stubbed WoW API, enUS and deDE) loads the TOC in order, fires ADDON_LOADED / PLAYER_LOGIN / PLAYER_ENTERING_WORLD, rewrites an Object, a stacked MinimapMouseover and a Unit tooltip, records a gather miss, toggles tracking and loot event registration and applies the GameTooltip fallback once. The packager (`release.sh -d -z -e`) staged the addon as game type `forever`, version 1.60.1, honoring `.pkgmeta`; `.release/GatherSkillTooltip-2.0.0.zip` was built from that staging directory.
+
+| Commit | Items | Notes |
+| --- | --- | --- |
+| `b3d4311` | CQ-001 | 15 s node memory with clear-on-unknown; single-match rule for pin stacks |
+| `d04363c` | CQ-003, COMPAT-001 | truthiness test; `GetPrimaryTooltipData` first |
+| `c8cde02` | CQ-004, CQ-005, ARCH-006 | `db.version = 2`, migrations, validation, `minimapIcon.hide` derived in one place |
+| `628566a` | CQ-002 | loot-GUID tracking (option a): negative learning only for own, fully looted corpse |
+| `fdc6e71` | COMPAT-003, COMPAT-004 | numeric creature type ids with name fallback and debug mismatch print; `UNIT_SKINNABLE_LEATHER` |
+| `c190fbb` | PERF-001, ARCH-002 | coalesced timer, shared callback; tracking and loot events registered only while active |
+| `09c4b92` | COMPAT-002 | aura path removed (verified `RequiresNonSecretAura`); UNIT_AURA kept as a trigger with debug trace |
+| `5f449ab` | UI-001, UI-002 | fallback minimized and instrumented (`/gst stats`); Corpse post-call kept |
+| `386a5fc` | PERF-002, PERF-003, PERF-004 | single unit resolution, `data.lines` first, cached messages and bands |
+| `6c3acd2` | COMPAT-005 | dead multi-client fallbacks removed |
+| `68ed53c` | ARCH-001, ARCH-002, ARCH-003, ARCH-004 | `Core.lua` split into 10 modules; dispatch table; `CreateBanner()`; `StripInline`; ids and `NODE_BY_KEY` in `Data.lua`; `ns.LOOKUP` a separate table |
+| `d426eed` | TOOL-002, TOOL-003, TOOL-004 | `.annotations/`, `.luacheckrc`, README, CHANGELOG, `.pkgmeta`, CI and release workflows |
+| `5adb5c9` | ARCH-005, PERF-005 | `Locales/<locale>.lua` gated by `[AllowLoadTextLocale]` (same TOC pattern BigWigs uses on this client) |
+| `47cd566` | TOOL-005 | `tests/run.lua` |
+
+### Deviations from the plan
+
+- ARCH-001 module list gained `Database.lua` (SavedVariables) and `Tooltip.lua` (object tooltips) beyond the eight files named in the plan; `TooltipText.lua` holds the secret-safe readers, colors and strip helpers as planned.
+- Frames are created lazily in `Warnings.lua` and `MinimapButton.lua` (first use, never at load); the only load-time WoW API calls are in `Events.lua`, as the Part 5 standard requires.
+- `EN = nil` style memory release in the old `Locales.lua` is gone; per-locale files make it unnecessary.
+- No GitHub remote exists yet, so the CI and release workflows have not run. They are configured against verified inputs (`nebularg/actions-luacheck@v1`, `leafo/gh-actions-lua@v13` with `5.1.5`, `BigWigsMods/packager@v2`; `release.sh` maps TOC `16xxx` to game type `forever`).
+
+### Requires in-game confirmation before tagging 2.0.0
+
+Everything below was implemented with a safe default and, where useful, debug instrumentation, because it cannot be observed from source. Run with `/gst debug` on where noted.
+
+1. **CQ-002** — Kill and skin-check flow: hover your own unlooted dead beast (no "cannot be skinned" learned), loot it fully, hover again (line present, `Learned: X can be skinned` with `learnChat` on). Confirms the "Skinnable line appears only after looting" premise and the LOOT_OPENED/LOOT_CLOSED GUID capture.
+2. **COMPAT-002** — Over a full session with `/gst debug`, watch for `tracking warning shown/hidden after UNIT_AURA`. If it never appears (only `MINIMAP_UPDATE_TRACKING`, `PLAYER_REGEN_ENABLED`, `watchdog/other`), remove the `{ "UNIT_AURA", "player" }` entry from `TRACKING_EVENTS` in `Warnings.lua` and the `UNIT_AURA` handler line in `Events.lua`.
+3. **COMPAT-003** — `/dump UnitCreatureType("target")` on a beast and a dragonkin: confirm ids 1 and 2 (`ns.SKIN_TYPE_IDS` in `Data.lua`). A debug line `creature type mismatch` on hover means the id table is wrong for that type.
+4. **COMPAT-004** — `/dump UNIT_SKINNABLE_LEATHER` should be `"Skinnable"` on enUS (and the localized word on the second locale). `nil` means the addon is using the locale fallback (still correct, but note it here).
+5. **UI-001** — After a full session, `/gst stats`: if `applied` is 0, delete the fallback block at the end of `Events.lua` and the `stats` command in `Options.lua`.
+6. **UI-002** — Hover a dead NPC with `/gst debug`: if the skinning line appears (it comes through the Unit post-call), the Corpse post-call in `Events.lua` can be removed once a session shows it never contributes.
+7. **ARCH-005** — On a non-enUS client, confirm `Locales/<locale>.lua` loaded (settings panel in that language, localized node names matched). On enUS, only `Locales/enUS.lua` loads.
+8. **Part 6 checklist** — run in full on enUS and one other locale; record the Appendix A measurements; then `git tag -a 2.0.0 -m "2.0.0"` and push (the release workflow packages and publishes).

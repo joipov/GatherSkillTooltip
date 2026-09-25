@@ -1,9 +1,11 @@
 # Changelog
 
-## Unreleased
+## 2.0.0
 
 Result of the code quality, modernization and performance audit
 (`CODE_AUDIT.md`). No new features; behavior changes are listed explicitly.
+Same SavedVariables (`GatherSkillTooltipDB`); existing data is migrated in
+place on first load.
 
 ### Fixed
 
