@@ -156,5 +156,16 @@ _G.SlashCmdList.GATHERSKILLTOOLTIP = function(msg)
 		end
 		return
 	end
+	if msg == "stats" then
+		-- Diagnostic counters (UI-001); English only, not user-facing.
+		local s = ns.fallbackStats
+		if s then
+			print(string.format(
+				"|cff88ccff%s:|r tooltip fallback: shown %d, checked %d, applied %d, retried %d",
+				ns.TITLE, s.shown, s.checked, s.applied, s.retried
+			))
+		end
+		return
+	end
 	ns.OpenSettings()
 end
