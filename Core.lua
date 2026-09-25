@@ -19,6 +19,7 @@ local UnitLevel = UnitLevel
 local UnitGUID = UnitGUID
 local UnitTokenFromGUID = UnitTokenFromGUID
 local UnitIsTapDenied = UnitIsTapDenied
+local GetNumLootItems = GetNumLootItems
 local UnitIsTapped = UnitIsTapped
 local UnitIsTappedByPlayer = UnitIsTappedByPlayer
 
@@ -1074,6 +1075,58 @@ local function CreateMinimapButton()
 	ns.UpdateMinimapButton()
 end
 
+-- CQ-002: on Classic-rules clients the "Skinnable" tooltip line appears only
+-- after a corpse has been emptied. A missing line is therefore treated as
+-- "cannot be skinned" only for corpses this client has fully looted.
+local lootedCorpses = {}
+local LOOTED_CORPSE_SECONDS = 600
+local pendingLootGuid
+local pendingLootSlots = 0
+
+local function DeadUnitGUID(unit)
+	local dead = UnitIsDead(unit)
+	if SecretBlocked(dead) or not dead then
+		return nil
+	end
+	return ReadableString(UnitGUID(unit))
+end
+
+local function OnLootOpened()
+	-- The corpse being looted is under the cursor (right-click) or targeted.
+	pendingLootGuid = DeadUnitGUID("mouseover") or DeadUnitGUID("target")
+	local slots = GetNumLootItems()
+	pendingLootSlots = type(slots) == "number" and slots or 0
+end
+
+local function OnLootSlotCleared()
+	if pendingLootSlots > 0 then
+		pendingLootSlots = pendingLootSlots - 1
+	end
+end
+
+local function OnLootClosed()
+	local guid = pendingLootGuid
+	pendingLootGuid = nil
+	if not guid or pendingLootSlots > 0 then
+		return
+	end
+	local now = GetTime()
+	for old, seen in pairs(lootedCorpses) do
+		if now - seen > LOOTED_CORPSE_SECONDS then
+			lootedCorpses[old] = nil
+		end
+	end
+	lootedCorpses[guid] = now
+end
+
+local function CorpseLooted(unit, data)
+	local guid = ReadableString(UnitGUID(unit))
+	if not guid and data and CanIndex(data) then
+		guid = ReadableString(data.guid)
+	end
+	return guid ~= nil and lootedCorpses[guid] ~= nil
+end
+
 local function NoteGatherResult(key, skill, gained)
 	local db = ns.db
 	if not db or not key or type(skill) ~= "number" then
@@ -1213,6 +1266,9 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, _, arg3)
 		eventFrame:RegisterUnitEvent("UNIT_SPELLCAST_SUCCEEDED", "player")
 		eventFrame:RegisterUnitEvent("UNIT_SPELLCAST_INTERRUPTED", "player")
 		eventFrame:RegisterUnitEvent("UNIT_SPELLCAST_FAILED", "player")
+		eventFrame:RegisterEvent("LOOT_OPENED")
+		eventFrame:RegisterEvent("LOOT_SLOT_CLEARED")
+		eventFrame:RegisterEvent("LOOT_CLOSED")
 		if ns.InitOptions then
 			ns.InitOptions()
 		end
@@ -1244,6 +1300,19 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, _, arg3)
 
 	if TRACKING_QUEUE_EVENTS[event] then
 		ns.QueueTrackingCheck()
+		return
+	end
+
+	if event == "LOOT_OPENED" then
+		OnLootOpened()
+		return
+	end
+	if event == "LOOT_SLOT_CLEARED" then
+		OnLootSlotCleared()
+		return
+	end
+	if event == "LOOT_CLOSED" then
+		OnLootClosed()
 		return
 	end
 
@@ -1544,10 +1613,11 @@ local function LearnSkin(tooltip, data)
 		end
 		return
 	end
-	if previous then
+	if previous ~= nil then
 		return
 	end
-	if CorpseIsOurs(unit) and previous ~= false then
+	-- Negative evidence is only trusted for our own, fully looted corpse.
+	if CorpseIsOurs(unit) and CorpseLooted(unit, data) then
 		db.skinIds[npcID] = false
 		LearnChat(ns.L.LEARNED_SKIN_NO:format(name))
 	end
