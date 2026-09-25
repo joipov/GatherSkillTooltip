@@ -21,5 +21,14 @@
 
 Data.lua
 Locales.lua
-Core.lua
+Database.lua
+TooltipText.lua
+Skills.lua
+Nodes.lua
+Tooltip.lua
+Skinning.lua
+Learning.lua
+Warnings.lua
+MinimapButton.lua
+Events.lua
 Options.lua

@@ -1023,15 +1023,7 @@ if overlay then
 	end
 end
 
--- Locale-independent creature type IDs, the second return of
--- UnitCreatureType (COMPAT-003). Confirm in-game with
--- /dump UnitCreatureType("target") on a beast; the name table below is the
--- fallback until that check is recorded in CODE_AUDIT.md.
-ns.SKIN_TYPE_IDS = {
-	[1] = true, -- Beast
-	[2] = true, -- Dragonkin
-}
-
+-- Localized creature type names; fallback for ns.SKIN_TYPE_IDS (Data.lua).
 ns.SKIN_TYPES = {
 	Beast = true,
 	Dragonkin = true,
@@ -1043,24 +1035,23 @@ ns.SKIN_TYPES = {
 -- the localized table entry is the fallback.
 ns.SKINNABLE_TEXT = _G.UNIT_SKINNABLE_LEATHER or ns.L.SKINNABLE
 
-local function AddLookup(name, node)
-	if name and node then
-		ns.LOOKUP[name] = node
-	end
-end
-
+-- Tooltip name -> node. A separate table (ARCH-004): English names from
+-- ns.NODES plus this locale's aliases, without mutating ns.NODES.
 local function BuildLookup()
-	if not ns.NODES then
-		return
+	local lookup = {}
+	for name, node in pairs(ns.NODES) do
+		lookup[name] = node
 	end
-	ns.LOOKUP = ns.NODES
 	local aliases = ALIASES[locale]
-	if not aliases then
-		return
+	if aliases then
+		for locName, enName in pairs(aliases) do
+			local node = ns.NODES[enName]
+			if node then
+				lookup[locName] = node
+			end
+		end
 	end
-	for locName, enName in pairs(aliases) do
-		AddLookup(locName, ns.NODES[enName])
-	end
+	ns.LOOKUP = lookup
 end
 
 BuildLookup()
