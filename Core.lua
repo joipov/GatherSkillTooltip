@@ -88,11 +88,15 @@ local lastDebugText
 local skillsRefreshed
 local lastNodeKey
 local lastNodeProf
+local lastNodeTime = 0
 local lastSkinLevel
 local gatherWatch
 local MISS_GREY = 20
 local RATE_TRIES = 4
 local GATHER_WATCH_SECONDS = 1
+-- A hovered node is only attributed to a gather cast that starts within this
+-- window (CQ-001). Hovering an unknown object or an ambiguous pin stack clears it.
+local NODE_KEY_SECONDS = 15
 
 local function CopyDefaults(db)
 	for key, value in pairs(defaults) do
@@ -422,23 +426,40 @@ end
 local function ApplyLine(db, line)
 	local name, node, cleaned = ExactNode(line)
 	if not node then
-		return line, false, false, cleaned
-	end
-	if node.key and (node.prof == "herb" or node.prof == "mine") then
-		lastNodeKey = node.key
-		lastNodeProf = node.prof
+		return line, false, nil, cleaned
 	end
 	local title, prefix = FormatNode(name, node)
 	if not title then
-		return line, false, true, cleaned
+		return line, false, node, cleaned
 	end
 	if db.color then
-		return ColorWrap(title, prefix), true, true, cleaned
+		return ColorWrap(title, prefix), true, node, cleaned
 	end
-	return title, true, true, cleaned
+	return title, true, node, cleaned
 end
 
-local function ApplyTooltip(tooltip, data)
+local function ForgetNode()
+	lastNodeKey = nil
+	lastNodeProf = nil
+	lastNodeTime = 0
+end
+
+-- Records the node under the cursor so a following gather cast can be
+-- attributed to it. `node` is nil when the hovered object is unknown; the
+-- previous node is then forgotten so it cannot be misattributed (CQ-001).
+local function RememberNode(node)
+	if node and node.key and (node.prof == "herb" or node.prof == "mine") then
+		lastNodeKey = node.key
+		lastNodeProf = node.prof
+		lastNodeTime = GetTime()
+		return
+	end
+	ForgetNode()
+end
+
+-- `trackNode` is true only for Object and MinimapMouseover tooltips, where
+-- the first line names the world object the player is about to interact with.
+local function ApplyTooltip(tooltip, data, trackNode)
 	local db = ns.db
 	if not db or not db.enabled or not tooltip or not tooltip.GetName then
 		return false
@@ -453,9 +474,12 @@ local function ApplyTooltip(tooltip, data)
 	end
 
 	if not raw:find("\n", 1, true) then
-		local line, matched, known, cleaned = ApplyLine(db, raw)
+		local line, matched, node, cleaned = ApplyLine(db, raw)
+		if trackNode then
+			RememberNode(node)
+		end
 		if not matched then
-			if not known then
+			if not node then
 				ShowUnmatched(raw, cleaned)
 			end
 			return false
@@ -463,24 +487,33 @@ local function ApplyTooltip(tooltip, data)
 		return ApplyDisplay(tooltip, fs, line)
 	end
 
+	-- Stacked minimap pins: several object names separated by newlines.
 	local matched = false
 	local known = false
 	local firstCleaned
 	local parts = {}
 	local index = 0
+	local nodeCount = 0
+	local singleNode
 	for line in (raw .. "\n"):gmatch("(.-)\n") do
 		index = index + 1
-		local nextLine, lineMatched, lineKnown, cleaned = ApplyLine(db, line)
+		local nextLine, lineMatched, node, cleaned = ApplyLine(db, line)
 		if index == 1 then
 			firstCleaned = cleaned
 		end
-		if lineKnown then
+		if node then
 			known = true
+			nodeCount = nodeCount + 1
+			singleNode = node
 		end
 		if lineMatched then
 			matched = true
 		end
 		parts[#parts + 1] = nextLine
+	end
+	if trackNode then
+		-- Only an unambiguous stack (exactly one known node) is remembered.
+		RememberNode(nodeCount == 1 and singleNode or nil)
 	end
 
 	if not matched then
@@ -491,6 +524,10 @@ local function ApplyTooltip(tooltip, data)
 	end
 
 	return ApplyDisplay(tooltip, fs, table.concat(parts, "\n"))
+end
+
+local function OnObjectTooltip(tooltip, data)
+	return ApplyTooltip(tooltip, data, true)
 end
 
 local function EnsureWarningFrame()
@@ -989,6 +1026,10 @@ local function GatherKey(prof)
 		return "skin:" .. level
 	end
 	if not lastNodeKey or lastNodeProf ~= prof then
+		return nil
+	end
+	if GetTime() - lastNodeTime > NODE_KEY_SECONDS then
+		ForgetNode()
 		return nil
 	end
 	return lastNodeKey
@@ -1527,10 +1568,10 @@ end
 
 if TooltipDataProcessor and Enum and Enum.TooltipDataType then
 	if Enum.TooltipDataType.MinimapMouseover then
-		TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.MinimapMouseover, ApplyTooltip)
+		TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.MinimapMouseover, OnObjectTooltip)
 	end
 	if Enum.TooltipDataType.Object then
-		TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Object, ApplyTooltip)
+		TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Object, OnObjectTooltip)
 	end
 	if Enum.TooltipDataType.Unit then
 		TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Unit, OnUnitTooltip)
