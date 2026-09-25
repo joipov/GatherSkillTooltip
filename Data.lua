@@ -1,5 +1,7 @@
 local _, ns = ...
 
+ns.TITLE = "GatherSkillTooltip"
+
 ns.HERB_SKILL_LINE = 182
 ns.MINE_SKILL_LINE = 186
 ns.SKIN_SKILL_LINE = 393
@@ -8,6 +10,36 @@ ns.FIND_MINERALS_SPELL = 2580
 ns.HERB_GATHER_SPELL = 2366
 ns.MINE_GATHER_SPELL = 2575
 ns.SKILL_CAP = 300
+
+-- Gathering spell ranks -> profession key.
+ns.GATHER_SPELLS = {
+	[ns.HERB_GATHER_SPELL] = "herb",
+	[2368] = "herb",
+	[3570] = "herb",
+	[11993] = "herb",
+	[ns.MINE_GATHER_SPELL] = "mine",
+	[2576] = "mine",
+	[3564] = "mine",
+	[10248] = "mine",
+	[8613] = "skin",
+	[8617] = "skin",
+	[8618] = "skin",
+	[10768] = "skin",
+}
+
+ns.TRACKING_SPELLS = {
+	[ns.FIND_HERBS_SPELL] = true,
+	[ns.FIND_MINERALS_SPELL] = true,
+}
+
+-- Locale-independent creature type IDs, the second return of
+-- UnitCreatureType (COMPAT-003). Confirm in-game with
+-- /dump UnitCreatureType("target") on a beast; ns.SKIN_TYPES (Locales.lua)
+-- is the name fallback until that check is recorded in CODE_AUDIT.md.
+ns.SKIN_TYPE_IDS = {
+	[1] = true, -- Beast
+	[2] = true, -- Dragonkin
+}
 
 local function Node(orange, yellow, green, grey, prof)
 	return {
@@ -82,8 +114,15 @@ ns.NODES = {
 	["Large Obsidian Chunk"] = Node(305, 330, 355, 405, mine),
 }
 
+-- Nodes sharing a table (copper variants) share one learned-data key: the
+-- lexically smallest English name.
 for name, node in pairs(ns.NODES) do
 	if not node.key or name < node.key then
 		node.key = name
 	end
+end
+
+ns.NODE_BY_KEY = {}
+for _, node in pairs(ns.NODES) do
+	ns.NODE_BY_KEY[node.key] = node
 end
