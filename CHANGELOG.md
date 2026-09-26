@@ -99,9 +99,6 @@ in git. Source files: `Core.lua`, `Data.lua`, `Locales.lua`, `Options.lua`.
   present, and an addon compartment button.
 - Forever only (`## Interface: 16001`, `## AllowLoadGameType camelot`).
 
-## Before 1.9.0
+## Before v1
 
-Those releases are not in version control. The only older version named in
-the repository is 1.8.0: the 1.9.0 audit calls persisting "cannot be skinned"
-on an NPC id a 1.8.0 feature. No other version numbers or release notes exist
-in the repo.
+Alpha builds. No changelog for those.
