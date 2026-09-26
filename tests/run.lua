@@ -2,8 +2,10 @@
 -- Plain Lua 5.1 / LuaJIT, no game client:
 --   luajit tests/run.lua      (from the repository root)
 --   lua5.1 tests/run.lua
--- Files that touch the WoW API at load (Events.lua, Options.lua, ...) are
--- not loaded here; they are covered by the in-game checklist in CODE_AUDIT.md.
+-- Files that touch the WoW API at load (Events.lua, Options.lua, Warnings.lua)
+-- are not loaded here; they are covered by the in-game checklist in CODE_AUDIT.md.
+-- Tooltip.lua and Learning.lua only bind globals at load, so they are loaded
+-- below a small set of stubs.
 
 local root = (arg and arg[0] or "tests/run.lua"):match("^(.*)[/\\]tests[/\\]") or "."
 
@@ -14,6 +16,28 @@ issecrettable = function() return false end
 canaccesstable = function() return true end
 C_Spell = {}
 C_TradeSkillUI = {}
+
+-- Tooltip.lua and Learning.lua capture these at load. They are not called
+-- until a test invokes a cast or a tooltip.
+local now = 1000
+function GetTime()
+	return now
+end
+C_Timer = {
+	NewTimer = function()
+		return { Cancel = function() end }
+	end,
+}
+function GetProfessions()
+	return 1
+end
+function GetProfessionInfo(index)
+	if index ~= 1 then
+		return
+	end
+	-- name, icon, skill, max, abilities, offset, skillLine, modifier
+	return "Herbalism", 0, 150, 225, 0, 0, 182, 0
+end
 
 local ns = {}
 local function load(file)
@@ -29,7 +53,9 @@ load("Database.lua")
 load("TooltipText.lua")
 load("Skills.lua")
 load("Nodes.lua")
+load("Tooltip.lua")
 load("Skinning.lua")
+load("Learning.lua")
 
 -- Runner -----------------------------------------------------------------------
 
@@ -112,8 +138,22 @@ test("RegisterLocale overlays strings and adds aliases without touching NODES", 
 	eq(ns.NODES["Friedensblume"], nil)
 end)
 
+test("Forever starter herbs share Classic bands", function()
+	eq(ns.NODES["Wilted Peacebloom"], ns.NODES["Peacebloom"], "shared table")
+	eq(ns.NODES["Stunted Silverleaf"], ns.NODES["Silverleaf"], "shared table")
+	eq(ns.NODES["Wilted Peacebloom"].key, "Peacebloom")
+	eq(ns.NODES["Stunted Silverleaf"].key, "Silverleaf")
+	local name, node = ns.ExactNode("Wilted Peacebloom")
+	eq(name, "Wilted Peacebloom"); eq(node, ns.NODES["Peacebloom"])
+	name, node = ns.ExactNode("Stunted Silverleaf")
+	eq(name, "Stunted Silverleaf"); eq(node, ns.NODES["Silverleaf"])
+end)
+
 test("GATHER_SPELLS and TRACKING_SPELLS", function()
 	eq(ns.GATHER_SPELLS[2366], "herb")
+	eq(ns.ProfessionForGatherSpell(2366), "herb")
+	eq(ns.ProfessionForGatherSpell(nil), nil)
+	eq(ns.ProfessionForGatherSpell(1), nil, "unknown spell")
 	eq(ns.GATHER_SPELLS[10248], "mine")
 	eq(ns.GATHER_SPELLS[10768], "skin")
 	eq(ns.TRACKING_SPELLS[2383], true)
@@ -159,10 +199,14 @@ test("EffectiveOrange lowers the threshold from learned gains", function()
 	local node = ns.NODES["Copper Vein"] -- orange 1
 	eq(ns.EffectiveOrange(node, node.key), 1)
 	local tin = ns.NODES["Tin Vein"] -- orange 65
-	db.gather["Tin Vein"] = { misses = {}, gains = {}, gainedAt = 60 }
+	db.gather["Tin Vein"] = { misses = {}, gains = {}, orangeSeen = 60 }
 	eq(ns.EffectiveOrange(tin, "Tin Vein"), 60)
-	db.gather["Tin Vein"].gainedAt = 70
+	db.gather["Tin Vein"].orangeSeen = 70
 	eq(ns.EffectiveOrange(tin, "Tin Vein"), 65, "never raised above the table value")
+	-- gainedAt is the highest gain and must not move the threshold.
+	db.gather["Tin Vein"].orangeSeen = 60
+	db.gather["Tin Vein"].gainedAt = 90
+	eq(ns.EffectiveOrange(tin, "Tin Vein"), 60)
 end)
 
 test("NoteGatherResult and ObservedColor", function()
@@ -219,11 +263,12 @@ end)
 
 test("LoadDB applies defaults and versions a fresh table", function()
 	local db = ns.LoadDB(nil)
-	eq(db.version, 2)
+	eq(db.version, 3)
 	eq(db.enabled, true)
 	eq(db.learnChat, false)
 	eq(db.minimapAngle, 200)
 	eq(type(db.gather), "table"); eq(type(db.skinIds), "table"); eq(type(db.minimapIcon), "table")
+	eq(type(db.customNodes), "table")
 end)
 
 test("LoadDB migrates 1.x data once", function()
@@ -240,7 +285,7 @@ test("LoadDB migrates 1.x data once", function()
 	}
 	local db = ns.LoadDB(saved)
 	eq(db, saved, "same table")
-	eq(db.version, 2)
+	eq(db.version, 3)
 	eq(db.minimapAngle, 200, "old default angle moved")
 	eq(db.minimapIcon.minimapPos, 200, "old default band re-aligned")
 	eq(db.minimapIcon.hide, nil, "non-boolean hide dropped")
@@ -255,6 +300,144 @@ test("LoadDB migrates 1.x data once", function()
 	ns.LoadDB(db)
 	eq(db.minimapAngle, 220, "v2 data not migrated again")
 	eq(db.minimapIcon.minimapPos, 215)
+end)
+
+test("customNodes validate, merge, and never overwrite builtins", function()
+	local db = ns.LoadDB({
+		customNodes = {
+			["Mystery Herb"] = { orange = 40, yellow = 65, green = 90, grey = 140, prof = "herb", key = "Mystery Herb" },
+			["Peacebloom"] = { orange = 99, yellow = 100, green = 101, grey = 102, prof = "herb", key = "Peacebloom" },
+			bad = "nope",
+			["Broken"] = { orange = 1, prof = "herb" },
+			[12] = { orange = 1, yellow = 2, green = 3, grey = 4, prof = "mine" },
+		},
+	})
+	eq(db.customNodes["Mystery Herb"].orange, 40)
+	eq(db.customNodes["Peacebloom"], nil, "builtin stripped from customNodes")
+	eq(db.customNodes.bad, nil)
+	eq(db.customNodes["Broken"], nil)
+	eq(db.customNodes[12], nil)
+
+	ns.ApplyCustomNodes(db.customNodes)
+	local name, node = ns.ExactNode("Mystery Herb")
+	eq(name, "Mystery Herb"); eq(node.orange, 40); eq(node.prof, "herb")
+	eq(ns.ExactNode("Peacebloom"), "Peacebloom")
+	eq(ns.LOOKUP["Peacebloom"], ns.NODES["Peacebloom"], "builtin LOOKUP untouched")
+
+	-- LearnCustomNode: new name, then ratchet keeps lower orange; builtin blocked.
+	freshDB()
+	eq(ns.LearnCustomNode("Beta Ore", "mine", 80), true)
+	eq(ns.db.customNodes["Beta Ore"].orange, 80)
+	eq(ns.LOOKUP["Beta Ore"].orange, 80)
+	eq(ns.LearnCustomNode("Beta Ore", "mine", 100), true)
+	eq(ns.db.customNodes["Beta Ore"].orange, 80, "orange never raised on re-learn")
+	eq(ns.LearnCustomNode("Beta Ore", "mine", 50), true)
+	eq(ns.db.customNodes["Beta Ore"].orange, 50, "lower orange kept")
+	eq(ns.LOOKUP["Beta Ore"].orange, 50)
+	eq(ns.LearnCustomNode("Peacebloom", "herb", 1), false)
+	eq(ns.db.customNodes["Peacebloom"], nil)
+	eq(ns.LOOKUP["Peacebloom"], ns.NODES["Peacebloom"])
+end)
+
+test("NoteGatherResult keeps a lowered orange after a higher gain", function()
+	local db = freshDB()
+	local tin = ns.NODES["Tin Vein"] -- orange 65
+	ns.NoteGatherResult("Tin Vein", 60, true)
+	eq(db.gather["Tin Vein"].gainedAt, 60)
+	eq(db.gather["Tin Vein"].orangeSeen, 60)
+	eq(ns.EffectiveOrange(tin, "Tin Vein"), 60)
+	ns.NoteGatherResult("Tin Vein", 80, true)
+	eq(db.gather["Tin Vein"].gainedAt, 80, "gainedAt still tracks the highest gain")
+	eq(db.gather["Tin Vein"].gains[60], 1)
+	eq(db.gather["Tin Vein"].orangeSeen, 60, "higher gain does not raise orangeSeen")
+	eq(ns.EffectiveOrange(tin, "Tin Vein"), 60)
+end)
+
+test("v2 gainedAt below table orange seeds orangeSeen once", function()
+	local saved = {
+		version = 2,
+		gather = {
+			["Tin Vein"] = { misses = {}, gains = {}, gainedAt = 60 },
+			["Copper Vein"] = { misses = {}, gains = {}, gainedAt = 50 },
+		},
+	}
+	local db = ns.LoadDB(saved)
+	eq(db.version, 3)
+	eq(db.gather["Tin Vein"].orangeSeen, 60)
+	eq(db.gather["Copper Vein"].orangeSeen, nil, "gainedAt above the table orange is not a floor")
+	db.gather["Tin Vein"].orangeSeen = nil
+	db.gather["Tin Vein"].gainedAt = 40
+	ns.LoadDB(db)
+	eq(db.version, 3)
+	eq(db.gather["Tin Vein"].orangeSeen, nil, "version 3 does not seed again")
+end)
+
+-- Tooltip memory and cast snapshot -----------------------------------------------
+
+local function fakeTip(text)
+	return {
+		TextLeft1 = {
+			GetText = function()
+				return text
+			end,
+			SetText = function() end,
+			SetTextColor = function() end,
+		},
+		GetName = function()
+			return "GameTooltip"
+		end,
+		NumLines = function()
+			return 1
+		end,
+		AddLine = function() end,
+	}
+end
+
+test("hovered node memory expires after 15 seconds", function()
+	freshDB()
+	now = 10000
+	ns.ApplyTooltip(fakeTip("Peacebloom"), nil, true)
+	eq(ns.RecentNodeKey("herb"), "Peacebloom")
+	now = 10015
+	eq(ns.RecentNodeKey("herb"), "Peacebloom", "exactly 15 seconds is still inside the window")
+	now = 10016
+	eq(ns.RecentNodeKey("herb"), nil)
+	ns.ApplyTooltip(fakeTip("Solid Chest"), nil, true)
+	eq(ns.RecentUnknownName(), "Solid Chest")
+	now = now + 16
+	eq(ns.RecentUnknownName(), nil)
+end)
+
+test("a known node cast does not save an earlier unmatched name", function()
+	freshDB()
+	now = 20000
+	ns.ApplyTooltip(fakeTip("Solid Chest"), nil, true)
+	eq(ns.RecentUnknownName(), "Solid Chest")
+	ns.ApplyTooltip(fakeTip("Peacebloom"), nil, true)
+	eq(ns.RecentUnknownName(), nil)
+	eq(ns.RecentNodeKey("herb"), "Peacebloom")
+	ns.OnGatherCastStart(2366)
+	ns.OnGatherCastSucceeded(2366)
+	eq(ns.db.customNodes["Solid Chest"], nil)
+end)
+
+test("unknown name is learned from the cast-start snapshot", function()
+	freshDB()
+	now = 30000
+	ns.ApplyTooltip(fakeTip("Snapshot Herb"), nil, true)
+	ns.OnGatherCastStart(2366)
+	-- Skill-up lands before success, and the tooltip moves on. Orange must
+	-- stay the skill captured at start, and the name must stay Snapshot Herb.
+	ns.skills.herb = 151
+	ns.ApplyTooltip(fakeTip("Peacebloom"), nil, true)
+	eq(ns.RecentUnknownName(), nil)
+	ns.OnGatherCastSucceeded(2366)
+	eq(ns.db.customNodes["Snapshot Herb"].orange, 150)
+	eq(ns.LOOKUP["Snapshot Herb"].orange, 150)
+	eq(ns.db.customNodes["Peacebloom"], nil)
+	-- Re-learning does not raise orange (existing LearnCustomNode rule).
+	eq(ns.LearnCustomNode("Snapshot Herb", "herb", 200), true)
+	eq(ns.db.customNodes["Snapshot Herb"].orange, 150)
 end)
 
 -- Summary --------------------------------------------------------------------------

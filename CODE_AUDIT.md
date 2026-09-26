@@ -1,7 +1,236 @@
-<!-- Generated from the approved audit plan on 2026-09-25. Baseline: GatherSkillTooltip 1.9.0, client wow_classic_beta 1.60.1.70009 (camelot). -->
+<!-- 2.0.1 audit, 2026-09-26. Forever / camelot, Interface 16001. The 2.0.0 record is Appendix A and Appendix B. -->
 
+# GatherSkillTooltip audit (2.0.1)
 
-# GatherSkillTooltip: Code Quality, Modernization and Performance Audit
+Target: World of Warcraft Forever, game type `camelot`, `## Interface: 16001` (same TOC version as HealPerMana on this client). Forever uses the mainline UI family, including Midnight secret values ([Wowhead, Forever addon API](https://www.wowhead.com/news/wow-forever-will-have-addon-changes-from-midnight-382921)). Lua runtime is 5.1.
+
+Phase 1 is implemented. Phase 2 deletions were not made: no in-game session was available, and this plan forbids those edits without one. Both outcomes are in Appendix C.
+
+## Coverage
+
+Read in full: `GatherSkillTooltip.toc`, `Data.lua`, `Database.lua`, `Locales/enUS.lua`, `Locales/deDE.lua`, `Locales.lua`, `TooltipText.lua`, `Skills.lua`, `Nodes.lua`, `Tooltip.lua`, `Skinning.lua`, `Learning.lua`, `Warnings.lua`, `MinimapButton.lua`, `Events.lua`, `Options.lua`, `tests/run.lua`, `.luacheckrc`, `.luarc.json`, `.pkgmeta`, both GitHub workflows, README, CHANGELOG, `.annotations/GatherSkillTooltip_Globals.lua`, and the open-verification list in Appendix B.
+
+Other locale files (`esES`, `esMX`, `frFR`, `itIT`, `koKR`, `ptBR`, `zhCN`, `zhTW`): not read line by line. A repo-wide search shows `LEARNED_NODE` exists only in enUS, and no locale file aliases `Wilted Peacebloom`, `Stunted Silverleaf`, or the copper-variant English names.
+
+Not reviewed, and why: `.release/` (packager output), SavedVariables (player data), Blizzard interface source (not extracted from CASC). The LuaLS library path in `.luarc.json` (`C:/Users/rubin/.cursor/extensions/ketho.wow-api/Annotations/Core`) is not present on disk here, so Ketho annotations were not opened. API signatures below come from Warcraft Wiki (current mainline pages) and from this client's own addon usage.
+
+External references actually used:
+
+- [UNIT_SPELLCAST_SUCCEEDED](https://warcraft.wiki.gg/wiki/UNIT_SPELLCAST_SUCCEEDED): payload is `unitTarget, castGUID, spellID, castBarID` (`castBarID` added in 12.0.0). The handlers in `Events.lua` take the third argument as `spellID`. That matches.
+- [Secret values](https://warcraft.wiki.gg/wiki/Secret_Values): `SecretWhenUnitSpellCastRestricted` applies when the unit is not the player or their pet. This addon registers spellcast events with `RegisterUnitEvent(..., "player")`, the same filter `EllesmereUIQuickdraw.lua` uses before it reads `spellID`.
+- [GetProfessionInfo](https://warcraft.wiki.gg/wiki/API_GetProfessionInfo) and [C_Spell.GetSpellName](https://warcraft.wiki.gg/wiki/API_C_Spell.GetSpellName): return order and names match `Skills.lua` and `Locales.lua`. `GetSpellName` is not documented as a secret return.
+- Tooltip post-calls match the pattern already used on this client by EllesmereUI and RaiderIO (`TooltipDataProcessor.AddTooltipPostCall`). Settings checkboxes match HealPerMana's `Settings.RegisterAddOnSetting` usage. `.luacheckrc` already follows the BigWigs style the file header describes (Lua 5.1, explicit read globals, a short write-globals list).
+
+## Part 1 — Executive summary
+
+The 2.0.0 structure should stay. One addon namespace (`ns`), TOC load order, saved-variable validation in `Database.lua`, secret-value guards in `TooltipText.lua`, lazy frames, and a single event frame with a dispatch table are the right size for this addon. There is no accidental global write beyond the five names `.luacheckrc` allows. There are no protected-function calls, no secure templates, and no `pcall` that hides errors. Frame creation during combat (the tracking banner) is on an unprotected frame and is allowed.
+
+What is not in good shape is the 2.0.1 "learn an unknown herb or ore from the last hovered name" path, and one field in the older learning model:
+
+- A successful herbalism or mining cast persists whatever unmatched object name was hovered in the last 15 seconds. A chest, quest object, or a localized node name that has no alias becomes a permanent `customNodes` entry whose orange skill is the player's skill at that cast, not the node's real band.
+- `gainedAt` stores the highest skill that ever granted a point. `EffectiveOrange` treats that same number as a lowered orange threshold. A later skill-up at or above the table orange throws away the earlier, lower observation. The displayed required skill jumps back up.
+
+Several items from Appendix B were never closed: `UNIT_AURA` is still registered, the GameTooltip `OnShow` fallback is still installed, the Corpse tooltip post-call is still registered, and creature-type ids are still an in-game check. Those are not new defects. They should not be deleted without the session Appendix B already described.
+
+No CPU or memory number was measured. Nothing below promises a percentage improvement.
+
+## Part 2 — Findings register
+
+### CQ-101 — Unmatched hover names are saved as nodes
+
+- Category: Correctness
+- Severity: High. One gather writes SavedVariables. The entry then wins future tooltips and can crowd out the real band.
+- Location: `Learning.lua` `OnGatherCastSucceeded`; `Tooltip.lua` `RememberUnknown` / `RecentUnknownName`; `Nodes.lua` `LearnCustomNode`.
+- Evidence: On cast success, any herb or mine spell calls `RecentUnknownName()` and, if a name is stored, `LearnCustomNode`. Known-node memory and unknown-name memory are cleared together, but the unknown name is not captured at cast start. Any Object or Minimap line that `ExactNode` misses (chest, door, quest object, or a real node whose client name is not in `LOOKUP`) is eligible for 15 seconds. `LearnCustomNode` does not check that the cast was the one started on that object.
+- Problem: False names persist for the account. A real Forever or localized name that should share Peacebloom's band is stored with `orange = current skill`, then `+25/+50/+100`, so the tooltip requirement is wrong until a later gather happens to be at a lower skill.
+- Recommendation: At `OnGatherCastStart`, snapshot the unknown name the same way the node key is snapshotted. On success, learn only that snapshot, and only when the snapshot cast had no known node key. Do not call `RecentUnknownName()` again at success. Leave the remaining hole documented: if the herb tooltip never replaces a previous unmatched name before the cast starts, that older name can still be learned. Do not add a denylist of object words.
+- Risk: A gather whose tooltip appears only after the cast starts would no longer learn. That is the safer direction.
+- Verification: Unit-test the snapshot (chest name, then a known node cast, must not save the chest; unknown name snapshotted at start must save even if the tooltip changes before success). In game, hover a chest, gather Peacebloom within 15 seconds with the Peacebloom tooltip showing first, and confirm `customNodes` has no chest entry. `/gst debug` should still print unmatched real node names so aliases can be added.
+
+### CQ-102 — Highest gain overwrites a lowered orange threshold
+
+- Category: Correctness
+- Severity: High for the displayed requirement. The per-skill gain and miss counts are kept; only the threshold number and `EffectiveOrange` are wrong after the second gain.
+- Location: `Nodes.lua` `NoteGatherResult` and `EffectiveOrange`. The test in `tests/run.lua` locks in "gainedAt tracks the highest gain" and never runs the two-step sequence.
+- Evidence: A gain sets `gainedAt` when `skill > obs.gainedAt`. `EffectiveOrange` returns `gainedAt` only while it stays below `band.orange`; otherwise it returns the table value. Tin Vein is orange at 65. A gain at 60 lowers the requirement to 60. A later gain at 80 sets `gainedAt` to 80 and the requirement returns to 65. The skill-up at 60 is still in `obs.gains[60]`.
+- Problem: The 2.0.0 changelog behavior ("a skill-up below the table orange lowers it") does not survive normal play, because the next skill-up is usually higher.
+- Recommendation: Store the lowered threshold separately and only decrease it (`orangeSeen`): set it when a gain's skill is below the table orange and below the stored value. Keep `gainedAt` as the highest gain so `GainedAtOrAbove` stays as it is. Add a test: gain at 60 then gain at 80 on Tin Vein leaves `EffectiveOrange` at 60. Existing saved `gainedAt` values can seed `orangeSeen` once, when `gainedAt` is below the table orange, in a version-3 migration.
+- Risk: Nodes that already lost the low threshold stay at the table value until the next low skill-up. No tooltip color formula changes besides the orange number.
+- Verification: The new unit test, plus one in-game Tin or Silverleaf gather below orange, then another above orange, with the `(skill/required)` number staying at the lower skill.
+
+### CQ-103 — Looted-corpse GUID can be the target, not the corpse
+
+- Category: Correctness
+- Severity: Medium. Wrong `skinIds[npcID] = false` is permanent and suppresses the skinning line.
+- Location: `Learning.lua` `OnLootOpened`, consumed by `CorpseLooted` and `Skinning.lua` `LearnSkin`.
+- Evidence: `pendingLootGuid = DeadUnitGUID("mouseover") or DeadUnitGUID("target")`. If mouseover is already clear and the target is a different dead NPC, that other GUID is marked fully looted when the slot counter hits zero. `LearnSkin` will then treat a missing "Skinnable" line on that NPC as negative evidence.
+- Problem: Vanilla loot has no looted-unit argument on `LOOT_OPENED`, so this fallback was a reasonable guess. It can condemn the wrong NPC.
+- Recommendation: Do not change the fallback until one debug session shows whether mouseover is still the corpse when `LOOT_OPENED` fires. If mouseover is reliable, delete the target fallback. If mouseover is often nil, keep target only when it equals the last unit tooltip NPC, not any dead target.
+- Risk: Dropping the fallback too early stops negative learning ("cannot be skinned") whenever mouseover has already cleared.
+- Verification: `/gst debug` line on `LOOT_OPENED` with mouseover GUID, target GUID, and slot count. Confirm an unlooted second corpse is not written to `skinIds`.
+
+### CQ-104 — New strings and Forever names are English-only
+
+- Category: Compatibility
+- Severity: Medium. Combined with CQ-101, a non-English object name becomes a custom node instead of an alias.
+- Location: `LEARNED_NODE` and the updated `LEARN_CHAT_TIP` are only in `Locales/enUS.lua`. No file under `Locales/` maps Wilted Peacebloom, Stunted Silverleaf, or Poor/Minor/Lesser/Small Copper Vein. deDE was read in full and confirms the classic aliases are present and those names are absent. `RegisterLocale` keeps the English string when a key is omitted, so the chat line is English inside a translated addon rather than a nil crash.
+- Evidence: Repo search for `LEARNED_NODE` and `Wilted Peacebloom` outside enUS and `Data.lua`.
+- Problem: Settings help and the learn chat line drift. A client name that is not the English table key is learned as a new node (CQ-101) with the wrong orange.
+- Recommendation: After CQ-101, collect unmatched names from `/gst debug` on the client locale in use and add those aliases to the matching locale file, pointing at the English `ns.NODES` key. Add `LEARNED_NODE` (and the herb/ore clause of `LEARN_CHAT_TIP`) to each locale. Do not invent Forever object translations that `/gst debug` has not shown.
+- Risk: A wrong alias attaches a node to the wrong band. Only add names the client actually displays.
+- Verification: On that locale, Wilted Peacebloom or its real client name tooltips as the Peacebloom band, and the learn chat line is in that language.
+
+### CQ-105 — Custom-node orange can be the post-skill-up value
+
+- Category: Correctness
+- Severity: Low. Off by one skill point on the first learn.
+- Location: `Learning.lua` `OnGatherCastSucceeded` calls `RefreshSkills` immediately before `LearnCustomNode`.
+- Evidence: If `SKILL_LINES_CHANGED` has already raised the base skill, the orange stored for a brand-new name is the new skill, not the skill the gather started at.
+- Recommendation: Pass the skill snapshotted at cast start. Fold this into the CQ-101 snapshot so there is one cast record.
+- Risk: None if the snapshot is the pre-cast skill.
+- Verification: Learn a new name on a gather that also skills up; orange equals the skill before the point, not after.
+
+### COMPAT-101 — UNIT_AURA is still a tracking trigger
+
+- Category: Compatibility / performance
+- Severity: Medium only if the event is useless. The handler is cheap when a timer is already pending. Not a confirmed bug.
+- Location: `Warnings.lua` `TRACKING_EVENTS`; handler in `Events.lua`. Appendix B already says to remove it if debug never shows `after UNIT_AURA`.
+- Evidence: Tracking state is read only from `C_Minimap.GetTrackingInfo`. `UNIT_AURA` does not change that answer. It still schedules `QueueTrackingCheck`.
+- Recommendation: Leave it until a `/gst debug` session. If the warning only changes after `MINIMAP_UPDATE_TRACKING`, `PLAYER_REGEN_ENABLED`, or `watchdog/other`, delete the unit-event entry and the handler line.
+- Risk: If some tracking changes on this client are delivered only as auras, the banner would wait up to the 1 second watchdog.
+- Verification: One play session with the warning toggling. Record which trigger string appears.
+
+### COMPAT-102 — Spell id is used as a table key without a secret check
+
+- Category: Security
+- Severity: Low. Not a confirmed defect.
+- Location: `ProfessionForGatherSpell`; `Events.lua` `TRACKING_SPELLS[spellID]`.
+- Evidence: Warcraft Wiki marks unit spellcast data secret when the unit is not the player or pet, with a per-spell override that can force secrecy. These events are player-only. Indexing with a secret key throws. Every other combat value in this addon goes through `SecretBlocked` first.
+- Recommendation: If `ns.SecretBlocked(spellID)` then return before the table index. One guard in `ProfessionForGatherSpell` and one before the tracking-spell lookup.
+- Risk: An always-secret gather spell would stop learning for that cast instead of erroring. That is the right failure.
+- Verification: Gather in combat (or while flagged) and confirm no secret-value error and that the node still records.
+
+### UI-101 — GameTooltip OnShow fallback is still on every typeless tooltip
+
+- Category: UI
+- Severity: Medium as ongoing work, not as a measured cost. `stats.shown` increments for every GameTooltip show while the addon is enabled; typed tooltips return immediately.
+- Location: `Events.lua` fallback block. Calling `tooltip:Show()` from `OnShow` does not re-enter `OnShow` on an already-shown frame, so this is not an infinite loop.
+- Recommendation: Keep until `/gst stats` after a full session. If `applied` is 0, delete the hook, the stats table, and the `/gst stats` command. If `applied` is non-zero, keep the hook and note which tooltip it was.
+- Risk: Removing it blindly drops nodes that never get a `TooltipDataType`.
+- Verification: `/gst stats` numbers from a session that included world nodes, minimap pins, items, and spells.
+
+### UI-102 — Corpse and Unit post-calls both run
+
+- Category: UI
+- Severity: Low. `LearnSkin` is idempotent (`previous ~= true`). The second pass strips and rewrites the level line.
+- Location: `Events.lua` Unit and Corpse `AddTooltipPostCall` lines. Appendix B already says the Corpse registration can go once a dead NPC is shown to arrive as Unit.
+- Recommendation: Remove the Corpse line only after a dead, skinnable NPC shows the skinning line with that line deleted on a test copy, or after debug shows the Unit post-call is what drew it.
+- Risk: A corpse that is not a Unit tooltip would lose the skinning line.
+- Verification: Dead beast, own loot, skinning suffix present.
+
+### ARCH-101 — Gather-spell lookup lives in the warning module
+
+- Category: Architecture
+- Severity: Low. Works because `Events.lua` loads last and the call is at event time, not file-load time.
+- Location: `ns.ProfessionForGatherSpell` in `Warnings.lua`, called from `Learning.lua`.
+- Recommendation: Move the function next to `ns.GATHER_SPELLS` in `Data.lua` when CQ-101 is edited. No other split.
+- Risk: None if the function body stays a `GATHER_SPELLS` lookup plus the secret guard.
+- Verification: Existing `GATHER_SPELLS` unit test, plus a gather still records.
+
+### ARCH-102 — Checkbox defaults are a second copy of Database defaults
+
+- Category: Architecture
+- Severity: Low. `LoadDB` runs before `InitOptions`, so the Settings default is unused as long as every key is filled.
+- Location: `defaults` in `Database.lua` and the `default` argument in `Options.lua` `AddCheckbox`.
+- Recommendation: Pass `defaults[key]` into `AddCheckbox` instead of a separate literal. Do this only while already editing `Options.lua`. Not scheduled: phase 1 does not edit that file.
+- Risk: A key missing from `defaults` would error. That is desirable.
+- Verification: Fresh SavedVariables still open with herbalism on and minimap button off.
+
+### TOOL-101 — LuaLS WoW library path does not resolve here
+
+- Category: Tooling
+- Severity: Medium for the editor, not for the game.
+- Location: `.luarc.json` `workspace.library` absolute path. CI runs luacheck and `lua 5.1.5 tests/run.lua` only, which is appropriate.
+- Recommendation: Keep luacheck as the CI gate. Point `workspace.library` at a repo-relative annotations checkout, or install the Ketho extension so the absolute path resolves. Do not add a new linter. The repo-local `.annotations/GatherSkillTooltip_Globals.lua` stays; it covers Settings and `TooltipDataProcessor`, which Ketho Core does not define for this addon.
+- Risk: A wrong library version would flag real Forever APIs as undefined.
+- Verification: LuaLS `undefined-global` clean on `Events.lua` with the library actually loaded.
+
+### TOOL-102 — Tests never load the tooltip memory or the gather watch
+
+- Category: Tooling
+- Severity: Medium. CQ-101 and CQ-102 are both untested paths. `Tooltip.lua` only captures `GetTime`; it does not call the client at file load, so the test harness can load it once `GetTime` is stubbed. Do not load `Events.lua`, `Options.lua`, or `Warnings.lua` under plain Lua.
+- Recommendation: Extend `tests/run.lua` for: unknown-name snapshot versus known-node cast, 15 second expiry, Tin Vein gain-at-60 then gain-at-80, and custom-node orange not rising.
+- Risk: None for the game client.
+- Verification: `lua 5.1 tests/run.lua` exits 0.
+
+### Rejected as changes
+
+- Caching `FormatNode` strings. Tooltip hovers are not per-frame, and the string depends on skill, options, and learned color.
+- Unregistering the four player spellcast events while the addon is disabled. The handler returns on the first table lookup. No profile shows this matters.
+- Replacing `GetProfessions` / `GetProfessionInfo`. The wiki signature matches the destructure in `Skills.lua`. Vanilla rules are two primary professions; herb, mine, and skin are those professions.
+- Removing secret-value checks. Forever runs Midnight's secret rules.
+- Rewriting modules, adding a library, or embedding LibDBIcon. OptionalDeps plus the built-in button is the right split.
+
+## Part 3 — Remediation roadmap
+
+Phase 1, correctness:
+
+- CQ-101 snapshot-at-cast-start. Benefit: stops false `customNodes`. Complexity: Small. Regression: a node whose tooltip appears only after the cast may not learn until the next hover-then-gather. Accept when a chest hover followed by a Peacebloom gather does not create a chest entry, and a genuine unknown name still creates one.
+- CQ-102 separate orange floor, plus a one-time seed from an existing low `gainedAt`. Benefit: required skill stays lowered. Complexity: Small. Regression: grey-versus-green behavior must stay on `gainedAt` and the per-skill counters. Accept when the Tin Vein test passes and an in-game second gather does not raise the number.
+- CQ-105 fold into the same cast snapshot. Complexity: Small.
+- ARCH-101 move `ProfessionForGatherSpell` in the same edit. Complexity: Small.
+- COMPAT-102 secret guard before spell-id indexing. Complexity: Small. Included in phase 1; it does not change successful player casts.
+- TOOL-102 tests for the above. Complexity: Small. This is the acceptance gate before any in-game pass.
+
+Phase 2, only after an in-game session (do not code these from the audit alone):
+
+- CQ-103 loot GUID, after the debug print says mouseover is or is not valid. Complexity: Small.
+- COMPAT-101 drop `UNIT_AURA` only if the debug trigger never names it. Complexity: Small.
+- UI-101 delete the OnShow fallback only if `applied == 0`. Complexity: Small.
+- UI-102 drop the Corpse post-call only if Unit already draws the line. Complexity: Small.
+- CQ-104 add aliases and `LEARNED_NODE` from names the client actually shows. Complexity: Small per locale, blocked on those names.
+
+Not scheduled: ARCH-102 (no `Options.lua` edit in phase 1), performance micro-opts from the reject list, any further file split, embedding libraries.
+
+## Part 4 — Performance
+
+Supported by code, worth doing only after the existing counters say so:
+
+- `UNIT_AURA` on the player while the tracking warning feature is on (COMPAT-101). High event rate, coalesced to one 0.5 second timer, so the cost is a Lua call per aura, not a tracking scan per aura. Remove only with the debug evidence.
+- GameTooltip `OnShow` fallback (UI-101). Runs for every typeless tooltip show, then returns when `data.type` is set. Removal is a complexity win more than a frame-time win. Decide from `/gst stats`.
+
+Hypotheses, do not implement: string garbage in `FormatNode` and stacked-pin `table.concat`; `RefreshSkills` twice when a skill event arrives during a pending watch; `lootedCorpses` retained until the next loot close (pruned at 600 seconds, bounded by corpses looted). None of these is on a per-frame path. The only `OnUpdate` scripts are the 1 Hz warning watchdog while that banner is shown, and the minimap button while it is being dragged.
+
+In-game procedure when a profile is needed, no numbers invented: `/console scriptProfile 1`, reload, hover a node, open and close the warning, skin one corpse, then `/console scriptProfile 0` and read the script profiler for `ApplyTooltip`, `OnUnitTooltip`, `CheckTracking`, and the `OnShow` hook. Baseline is the current build. Compare only after a phase 2 removal, same route. The 2.0.0 measurement snippets in Appendix A are still unfilled.
+
+## Part 5 — Standards for this repository
+
+These match the code that is already there. They are the bar for later edits.
+
+- Lua 5.1 only. No `goto`, no bitwise operators, no `<const>`.
+- Locals by default. New globals require a `.luacheckrc` entry and a reason. The allowed writes are `GatherSkillTooltipDB`, the two slash strings, `SlashCmdList.GATHERSKILLTOOLTIP`, and `GatherSkillTooltip_OnAddonCompartmentClick`.
+- Shared state goes on `ns`. Cross-file calls happen at event time. Files must not depend on a later TOC file at load time.
+- WoW API calls at file load stay in `Events.lua`. Frames are created on first use.
+- Combat values go through `SecretBlocked` / `ReadableString` / `CanIndex` before compare, length, concat, or table key use. Player spell ids get the same guard.
+- Events are registered while the feature is on. Tracking checks stay on the one shared timer. No new always-on `OnUpdate`.
+- SavedVariables go through `LoadDB`. New persistent shapes bump `DB_VERSION` and migrate once.
+- Difficulty colors and orange math stay in `Nodes.lua` and keep a unit test when the rule changes.
+- Do not add a library for a problem the current file can handle. LibDataBroker and LibDBIcon stay optional.
+- CI stays luacheck plus Lua 5.1 tests. In-game checks stay the list in Part 6. LuaLS is editor-only and must see a real API library plus `.annotations`.
+
+## Part 6 — Checklist for a later implementation session
+
+1. This file is the audit. Appendix A and Appendix B stay so the 2.0.0 IDs still resolve.
+2. Phase 1 code: cast snapshot, orange floor, migration, secret guard, move `ProfessionForGatherSpell`, tests.
+3. Run `lua 5.1 tests/run.lua` (or LuaJIT) and `luacheck .`.
+4. In game, enUS: Peacebloom and Copper Vein in the world and on a stacked minimap pin; an unknown object still does not rewrite the tooltip; chest hover then herb gather does not add a custom node; a real unknown name still learns; Tin or equivalent stays at the lowered requirement after a higher skill-up; skinning line on a looted beast; no line on a living humanoid; tracking banner in and out of combat; `/gst` opens settings; BugSack clean.
+5. Record `/gst stats` and, with `/gst debug`, the tracking trigger, the new loot-open line, and `UnitCreatureType` ids. Only then schedule phase 2 deletions.
+6. One non-enUS client, or a locale test that the new alias is in `LOOKUP` and `LEARNED_NODE` is not the English sentence.
+7. No profiler comparison until a phase 2 deletion exists to compare.
+
+---
+
+# GatherSkillTooltip: Code Quality, Modernization and Performance Audit (2.0.0)
 
 ## 0. Scope, method and evidence
 
@@ -437,3 +666,30 @@ Everything below was implemented with a safe default and, where useful, debug in
 6. **UI-002** — Hover a dead NPC with `/gst debug`: if the skinning line appears (it comes through the Unit post-call), the Corpse post-call in `Events.lua` can be removed once a session shows it never contributes.
 7. **ARCH-005** — On a non-enUS client, confirm `Locales/<locale>.lua` loaded (settings panel in that language, localized node names matched). On enUS, only `Locales/enUS.lua` loads.
 8. **Part 6 checklist** — run in full on enUS and one other locale; record the Appendix A measurements; then `git tag -a 2.0.0 -m "2.0.0"` and push (the release workflow packages and publishes).
+
+---
+
+## Appendix C: 2.0.1 remediation
+
+### Phase 1 (implemented)
+
+- **CQ-101, CQ-105.** `OnGatherCastStart` snapshots the unmatched object name and the pre-cast skill. It snapshots a name only when that cast has no known node key. `OnGatherCastSucceeded` learns only that snapshot and does not call `RecentUnknownName()` again. A skill-up that arrives before success does not change the stored orange.
+- **CQ-102.** `orangeSeen` is the lowered threshold and only decreases. `EffectiveOrange` reads it. `gainedAt` is still the highest gain and still drives `GainedAtOrAbove`. SavedVariables `version` 3 seeds `orangeSeen` once from a `gainedAt` that is still below the table orange. A later load does not seed again, so a threshold that was already lost is not invented.
+- **ARCH-101.** `ProfessionForGatherSpell` lives in `Data.lua` next to `GATHER_SPELLS`.
+- **COMPAT-102.** `SecretBlocked` runs before `GATHER_SPELLS` and `TRACKING_SPELLS` are indexed.
+- **TOOL-102.** `tests/run.lua` loads `Tooltip.lua` and `Learning.lua` under stubs. `luajit tests/run.lua`: 25 passed, 0 failed.
+- **luacheck.** Not installed in this environment (`luarocks show luacheck` reports the package missing). The GitHub workflow still runs it. `.luacheckrc` lists the new test stubs as allowed globals.
+
+Remaining hole, as specified: if a herb or ore tooltip never replaces an earlier unmatched name before the cast starts, that older name can still be learned.
+
+### Phase 2 (decided: leave the fallbacks in place)
+
+No debug session was available. The plan says not to delete or retarget these from the audit alone:
+
+- **CQ-103.** The mouseover-or-target loot GUID is unchanged. `OnLootOpened` now prints, when `/gst debug` is on, the mouseover GUID, the target GUID, and the slot count. That is the session the decision still needs.
+- **COMPAT-101.** `UNIT_AURA` stays registered.
+- **UI-101.** The GameTooltip `OnShow` fallback and `/gst stats` stay.
+- **UI-102.** The Corpse tooltip post-call stays.
+- **CQ-104.** No locale aliases and no `LEARNED_NODE` translations were added. Those names have not been read from the client.
+
+Part 6 steps 4 through 7 are still an in-game pass. No profiler numbers were taken.

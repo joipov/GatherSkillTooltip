@@ -20,7 +20,11 @@ files["tests/"] = {
 		"issecrettable",
 		"canaccesstable",
 		"C_Spell",
+		"C_Timer",
 		"C_TradeSkillUI",
+		"GetProfessionInfo",
+		"GetProfessions",
+		"GetTime",
 	},
 }
 

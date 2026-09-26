@@ -54,10 +54,15 @@ end
 local herb = "herb"
 local mine = "mine"
 local copper = Node(1, 25, 65, 100, mine)
+-- Forever starter herbs share Classic bands (Lock orange 1).
+local peacebloom = Node(1, 25, 50, 100, herb)
+local silverleaf = Node(1, 25, 50, 100, herb)
 
 ns.NODES = {
-	["Peacebloom"] = Node(1, 25, 50, 100, herb),
-	["Silverleaf"] = Node(1, 25, 50, 100, herb),
+	["Peacebloom"] = peacebloom,
+	["Wilted Peacebloom"] = peacebloom,
+	["Silverleaf"] = silverleaf,
+	["Stunted Silverleaf"] = silverleaf,
 	["Earthroot"] = Node(15, 40, 65, 115, herb),
 	["Mageroyal"] = Node(50, 75, 100, 150, herb),
 	["Briarthorn"] = Node(70, 95, 120, 170, herb),
@@ -125,4 +130,14 @@ end
 ns.NODE_BY_KEY = {}
 for _, node in pairs(ns.NODES) do
 	ns.NODE_BY_KEY[node.key] = node
+end
+
+-- Gathering spell id -> "herb" / "mine" / "skin". Secret ids are not used as
+-- table keys (COMPAT-102). Called at event time, after TooltipText.lua has
+-- defined ns.SecretBlocked.
+function ns.ProfessionForGatherSpell(spellID)
+	if not spellID or ns.SecretBlocked(spellID) then
+		return nil
+	end
+	return ns.GATHER_SPELLS[spellID]
 end

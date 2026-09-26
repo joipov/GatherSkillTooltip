@@ -45,6 +45,7 @@ function handlers.ADDON_LOADED(name)
 	end
 	_G.GatherSkillTooltipDB = ns.LoadDB(_G.GatherSkillTooltipDB)
 	ns.db = _G.GatherSkillTooltipDB
+	ns.ApplyCustomNodes(ns.db.customNodes)
 	eventFrame:UnregisterEvent("ADDON_LOADED")
 	ns.SetEventsRegistered(CORE_EVENTS, true)
 	ns.UpdateLootEvents()
@@ -96,7 +97,7 @@ handlers.UNIT_SPELLCAST_INTERRUPTED = OnCastStopped
 handlers.UNIT_SPELLCAST_FAILED = OnCastStopped
 
 function handlers.UNIT_SPELLCAST_SUCCEEDED(_, _, spellID)
-	if ns.TRACKING_SPELLS[spellID] then
+	if not ns.SecretBlocked(spellID) and ns.TRACKING_SPELLS[spellID] then
 		ns.QueueTrackingCheck()
 	end
 	ns.OnGatherCastSucceeded(spellID)
