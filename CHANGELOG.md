@@ -1,5 +1,42 @@
 # Changelog
 
+## 2.0.1
+
+Forever gather nodes, learning unknown herbs and ores from play, and
+corrections to how those learned skill thresholds are stored.
+
+### Added
+
+- Forever starter herbs **Wilted Peacebloom** and **Stunted Silverleaf** share
+  the Classic Peacebloom / Silverleaf skill bands (client GameObjects dump for
+  build 1.60.1.70009 has no herb/ore world names; Lock matches Classic herbs).
+- Unknown Object/Minimap herb and ore names hovered within 15 seconds are
+  remembered; a successful gather writes them to `customNodes` in
+  SavedVariables and merges them into the tooltip lookup for the session
+  (orange = skill at first successful gather, then +25/+50/+100). Built-in
+  names always win; re-learning keeps the lower orange.
+
+### Fixed
+
+- An unknown herb or ore is learned only from the name captured when the
+  gather cast starts, and only when that cast had no known node. A name that
+  appears only after the cast has started is not saved.
+- The orange skill stored for that new node is the skill at cast start, so a
+  skill-up on the same gather does not raise it.
+- The lowered orange threshold is stored as `orangeSeen` and only decreases.
+  `gainedAt` remains the highest skill-up and no longer erases an earlier,
+  lower threshold.
+
+### Changed
+
+- Chat learning option also announces newly learned herb/ore nodes.
+- SavedVariables move to version 3. On that load, a `gainedAt` that is still
+  below the table orange is copied into `orangeSeen` once.
+- Spell ids that are secret values are ignored before they are used as table
+  keys.
+- With `/gst debug` on, opening loot prints the mouseover GUID, the target
+  GUID, and the slot count.
+
 ## 2.0.0
 
 Result of the code quality, modernization and performance audit
@@ -47,4 +84,24 @@ place on first load.
 
 ## 1.9.0
 
-Baseline as shipped before the audit (git tag `v1.9.0-baseline`).
+Snapshot tagged `v1.9.0-baseline`. This is what that build contained. It is
+not a list of features introduced in 1.9.0, because earlier releases are not
+in git. Source files: `Core.lua`, `Data.lua`, `Locales.lua`, `Options.lua`.
+
+- Herb and ore tooltips in the world and on minimap pins, including stacked
+  pins, with your skill, the required skill, and difficulty colors.
+- Skinning skill beside the level of a creature you can skin, and learning
+  which NPCs can be skinned.
+- Learned gather colors from skill-ups and misses.
+- On-screen warnings when Find Herbs or Find Minerals is off, and when a
+  profession needs the next trainer rank.
+- Settings panel, `/gst`, a minimap button or LibDBIcon when that library is
+  present, and an addon compartment button.
+- Forever only (`## Interface: 16001`, `## AllowLoadGameType camelot`).
+
+## Before 1.9.0
+
+Those releases are not in version control. The only older version named in
+the repository is 1.8.0: the 1.9.0 audit calls persisting "cannot be skinned"
+on an NPC id a 1.8.0 feature. No other version numbers or release notes exist
+in the repo.

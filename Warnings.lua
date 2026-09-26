@@ -261,10 +261,6 @@ local function ShowTrainWarning(message)
 	trainTimer = C_Timer.NewTimer(TRAIN_SECONDS, OnTrainTimer)
 end
 
-function ns.ProfessionForGatherSpell(spellID)
-	return spellID and ns.GATHER_SPELLS[spellID]
-end
-
 -- After a successful gather: remind the player when the profession is at its
 -- current cap (base == max) and a higher rank exists.
 function ns.CheckTrainReminder(prof)

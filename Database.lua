@@ -20,7 +20,7 @@ local defaults = {
 }
 
 -- Bump when a one-time migration is added to MigrateDB.
-local DB_VERSION = 2
+local DB_VERSION = 3
 
 -- Applies defaults and resets any option whose type no longer matches its
 -- default (all options are booleans or numbers), so a corrupted or hand-edited
@@ -57,6 +57,9 @@ local function ValidateGather(gather)
 			if type(obs.gainedAt) ~= "number" then
 				obs.gainedAt = nil
 			end
+			if type(obs.orangeSeen) ~= "number" then
+				obs.orangeSeen = nil
+			end
 		end
 	end
 end
@@ -75,6 +78,29 @@ local function ValidateMinimapIcon(icon)
 	end
 	if type(icon.hide) ~= "boolean" then
 		icon.hide = nil
+	end
+end
+
+-- Player-learned herb/ore names from gather-after-hover. Built-in English
+-- names in ns.NODES always win and are stripped if they appear here.
+local function ValidateCustomNodes(customNodes)
+	local nodes = ns.NODES
+	for key, entry in pairs(customNodes) do
+		if type(key) ~= "string" or key == "" or type(entry) ~= "table" then
+			customNodes[key] = nil
+		elseif nodes and nodes[key] then
+			customNodes[key] = nil
+		elseif type(entry.orange) ~= "number"
+			or type(entry.yellow) ~= "number"
+			or type(entry.green) ~= "number"
+			or type(entry.grey) ~= "number"
+			or (entry.prof ~= "herb" and entry.prof ~= "mine") then
+			customNodes[key] = nil
+		else
+			if type(entry.key) ~= "string" or entry.key == "" then
+				entry.key = key
+			end
+		end
 	end
 end
 
@@ -109,6 +135,21 @@ local function MigrateDB(db)
 			end
 		end
 	end
+	if version < 3 then
+		-- 2.0.x stored the lowered orange threshold in gainedAt, which is also
+		-- the highest gain. Seed orangeSeen once from a gainedAt that is still
+		-- below the table orange (CQ-102). A later load does not seed again.
+		if type(db.gather) == "table" and ns.TableOrange then
+			for key, obs in pairs(db.gather) do
+				if type(obs) == "table" and type(obs.orangeSeen) ~= "number" then
+					local orange = ns.TableOrange(key)
+					if type(obs.gainedAt) == "number" and type(orange) == "number" and obs.gainedAt < orange then
+						obs.orangeSeen = obs.gainedAt
+					end
+				end
+			end
+		end
+	end
 	db.version = DB_VERSION
 end
 
@@ -118,7 +159,7 @@ function ns.LoadDB(saved)
 	local db = type(saved) == "table" and saved or {}
 	MigrateDB(db)
 	CopyDefaults(db)
-	for _, key in ipairs({ "gather", "skinIds", "minimapIcon" }) do
+	for _, key in ipairs({ "gather", "skinIds", "minimapIcon", "customNodes" }) do
 		if type(db[key]) ~= "table" then
 			db[key] = {}
 		end
@@ -126,5 +167,6 @@ function ns.LoadDB(saved)
 	ValidateGather(db.gather)
 	ValidateSkinIds(db.skinIds)
 	ValidateMinimapIcon(db.minimapIcon)
+	ValidateCustomNodes(db.customNodes)
 	return db
 end

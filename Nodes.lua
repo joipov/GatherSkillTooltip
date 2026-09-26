@@ -93,15 +93,39 @@ local function GainedAtOrAbove(obs, skill)
 	return type(obs.gainedAt) == "number" and obs.gainedAt >= skill
 end
 
--- The orange threshold after applying learned data: a recorded skill-up at a
--- lower skill than the table value lowers it. Returns a number, never a new
--- table (PERF-004).
+-- Static orange for a learned-data key: a built-in node, a skinning band, or
+-- a custom node. Used to decide whether a gain lowers orangeSeen. Not the
+-- effective (already lowered) threshold.
+function ns.TableOrange(key)
+	local node = ns.NODE_BY_KEY[key]
+	if node and type(node.orange) == "number" then
+		return node.orange
+	end
+	if type(key) ~= "string" then
+		return nil
+	end
+	local level = key:match("^skin:(%d+)$")
+	if level and ns.SkinningOrange then
+		return ns.SkinningOrange(tonumber(level))
+	end
+	local custom = ns.db and ns.db.customNodes and ns.db.customNodes[key]
+	if type(custom) == "table" and type(custom.orange) == "number" then
+		return custom.orange
+	end
+	return nil
+end
+
+-- The orange threshold after applying learned data. orangeSeen is the lowest
+-- skill-up recorded below the table orange and only ever decreases (CQ-102).
+-- gainedAt is the highest gain and is not used here. Returns a number, never
+-- a new table (PERF-004).
 function ns.EffectiveOrange(band, key)
 	local obs = GatherObs(key)
-	if not obs or type(obs.gainedAt) ~= "number" or obs.gainedAt >= band.orange then
+	local seen = obs and obs.orangeSeen
+	if type(seen) ~= "number" or seen >= band.orange then
 		return band.orange
 	end
-	return obs.gainedAt
+	return seen
 end
 
 function ns.ColorFromRate(gains, misses)
@@ -156,6 +180,11 @@ function ns.NoteGatherResult(key, skill, gained)
 		if not obs.gainedAt or skill > obs.gainedAt then
 			obs.gainedAt = skill
 		end
+		local orange = ns.TableOrange(key)
+		if type(orange) == "number" and skill < orange
+			and (type(obs.orangeSeen) ~= "number" or skill < obs.orangeSeen) then
+			obs.orangeSeen = skill
+		end
 		return
 	end
 	obs.misses[skill] = CountAt(obs.misses, skill) + 1
@@ -181,4 +210,105 @@ function ns.FormatNode(name, node)
 	end
 	local orange = ns.EffectiveOrange(node, node.key)
 	return TitleLine(name, skill, orange), ns.ObservedColor(skill, node, orange, node.key)
+end
+
+-- Custom nodes (learned from gather-after-hover) --------------------------------
+
+-- Inserts or replaces a LOOKUP entry from a validated customNodes record.
+-- Built-in English names and locale aliases that point at ns.NODES always win.
+function ns.RegisterCustomNode(name, entry)
+	if type(name) ~= "string" or name == "" or type(entry) ~= "table" then
+		return false
+	end
+	if ns.NODES[name] then
+		return false
+	end
+	local lookup = ns.LOOKUP
+	if not lookup then
+		return false
+	end
+	local existing = lookup[name]
+	if existing and ns.NODES[existing.key] then
+		return false
+	end
+	if type(entry.orange) ~= "number"
+		or type(entry.yellow) ~= "number"
+		or type(entry.green) ~= "number"
+		or type(entry.grey) ~= "number"
+		or (entry.prof ~= "herb" and entry.prof ~= "mine") then
+		return false
+	end
+	lookup[name] = {
+		orange = entry.orange,
+		yellow = entry.yellow,
+		green = entry.green,
+		grey = entry.grey,
+		prof = entry.prof,
+		key = (type(entry.key) == "string" and entry.key ~= "" and entry.key) or name,
+	}
+	return true
+end
+
+-- Merges SavedVariables customNodes into LOOKUP after built-ins and locale
+-- aliases so static Forever seeds always win over a custom overwrite.
+function ns.ApplyCustomNodes(customNodes)
+	if type(customNodes) ~= "table" then
+		return
+	end
+	for name, entry in pairs(customNodes) do
+		ns.RegisterCustomNode(name, entry)
+	end
+end
+
+-- Persists a newly gathered unknown herb/ore and merges it into LOOKUP.
+-- Keeps the lower orange if the name was already learned. Returns true when
+-- LOOKUP was updated.
+function ns.LearnCustomNode(name, prof, skill)
+	if type(name) ~= "string" or name == "" then
+		return false
+	end
+	if prof ~= "herb" and prof ~= "mine" then
+		return false
+	end
+	if type(skill) ~= "number" then
+		return false
+	end
+	if ns.NODES[name] then
+		return false
+	end
+	local lookup = ns.LOOKUP
+	local existing = lookup and lookup[name]
+	if existing and ns.NODES[existing.key] then
+		return false
+	end
+	local db = ns.db
+	if not db then
+		return false
+	end
+	db.customNodes = type(db.customNodes) == "table" and db.customNodes or {}
+	local prev = db.customNodes[name]
+	local orange = skill
+	if prev and type(prev.orange) == "number" and prev.orange < orange then
+		orange = prev.orange
+	end
+	if existing and type(existing.orange) == "number" and existing.orange < orange then
+		orange = existing.orange
+	end
+	local entry = {
+		orange = orange,
+		yellow = orange + 25,
+		green = orange + 50,
+		grey = orange + 100,
+		prof = prof,
+		key = name,
+	}
+	db.customNodes[name] = entry
+	if not ns.RegisterCustomNode(name, entry) then
+		return false
+	end
+	local L = ns.L
+	if ns.LearnChat and L and L.LEARNED_NODE then
+		ns.LearnChat(L.LEARNED_NODE:format(name, orange))
+	end
+	return true
 end

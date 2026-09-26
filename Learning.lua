@@ -48,9 +48,19 @@ end
 
 function ns.OnLootOpened()
 	-- The corpse being looted is under the cursor (right-click) or targeted.
-	pendingLootGuid = DeadUnitGUID("mouseover") or DeadUnitGUID("target")
+	-- CQ-103: debug which GUID won so a session can decide whether the target
+	-- fallback is safe. The fallback itself stays until that session.
+	local mouseGuid = DeadUnitGUID("mouseover")
+	local targetGuid = DeadUnitGUID("target")
+	pendingLootGuid = mouseGuid or targetGuid
 	local slots = GetNumLootItems()
 	pendingLootSlots = type(slots) == "number" and slots or 0
+	ns.Debug(
+		"loot opened",
+		"mouseover", mouseGuid or "nil",
+		"target", targetGuid or "nil",
+		"slots", pendingLootSlots
+	)
 end
 
 function ns.OnLootSlotCleared()
@@ -213,7 +223,9 @@ local function CancelGatherWatch()
 	gatherWatch = nil
 end
 
--- UNIT_SPELLCAST_START: arm a watch for a gathering spell.
+-- UNIT_SPELLCAST_START: arm a watch for a gathering spell. The node key and,
+-- when there is no known node, the unmatched object name are snapshotted here
+-- (CQ-101). Success does not read the tooltip again.
 function ns.OnGatherCastStart(spellID)
 	local prof = ns.ProfessionForGatherSpell(spellID)
 	if not prof or not ns.db or not ns.db.enabled then
@@ -221,17 +233,25 @@ function ns.OnGatherCastStart(spellID)
 	end
 	ns.RefreshSkills()
 	local key = GatherKey(prof)
+	local unknownName = nil
+	if not key and (prof == "herb" or prof == "mine") and ns.RecentUnknownName then
+		unknownName = ns.RecentUnknownName()
+	end
 	local skills = ns.skills
 	local skill = skills[prof]
 	local base = skills[prof .. "Base"]
 	local maxSkill = skills[prof .. "Max"]
 	CancelGatherWatch()
-	if not key or type(skill) ~= "number" or type(base) ~= "number" then
+	if type(skill) ~= "number" or type(base) ~= "number" then
+		return
+	end
+	if not key and (type(unknownName) ~= "string" or unknownName == "") then
 		return
 	end
 	gatherWatch = {
 		prof = prof,
 		key = key,
+		unknownName = unknownName,
 		skill = skill,
 		base = base,
 		maxSkill = maxSkill,
@@ -247,13 +267,26 @@ function ns.OnGatherCastStop(spellID)
 	end
 end
 
--- UNIT_SPELLCAST_SUCCEEDED: the armed watch becomes pending and a miss is
--- recorded unless a skill-up arrives within GATHER_WATCH_SECONDS.
+-- UNIT_SPELLCAST_SUCCEEDED: a known-node watch becomes pending and a miss is
+-- recorded unless a skill-up arrives within GATHER_WATCH_SECONDS. An unknown
+-- herb/ore is learned only from the name snapshotted at cast start, using
+-- that pre-cast skill (CQ-101, CQ-105).
 function ns.OnGatherCastSucceeded(spellID)
-	if gatherWatch and gatherWatch.spell == spellID and not gatherWatch.pending then
-		gatherWatch.pending = true
-		gatherWatch.timer = C_Timer.NewTimer(GATHER_WATCH_SECONDS, OnGatherWatchTimer)
+	local watch = gatherWatch
+	if not watch or watch.spell ~= spellID or watch.pending then
+		return
 	end
+	if type(watch.unknownName) == "string" and watch.unknownName ~= "" then
+		if ns.LearnCustomNode(watch.unknownName, watch.prof, watch.skill) and ns.ForgetUnknownName then
+			ns.ForgetUnknownName()
+		end
+	end
+	if not watch.key then
+		gatherWatch = nil
+		return
+	end
+	watch.pending = true
+	watch.timer = C_Timer.NewTimer(GATHER_WATCH_SECONDS, OnGatherWatchTimer)
 end
 
 -- SKILL_LINES_CHANGED / CHAT_MSG_SKILL: returns true when the pending watch

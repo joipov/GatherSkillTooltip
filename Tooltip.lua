@@ -13,6 +13,8 @@ local lastDebugText
 local lastNodeKey
 local lastNodeProf
 local lastNodeTime = 0
+local lastUnknownName
+local lastUnknownTime = 0
 -- A hovered node is only attributed to a gather cast that starts within this
 -- window (CQ-001). Hovering an unknown object or an ambiguous pin stack clears it.
 local NODE_KEY_SECONDS = 15
@@ -62,6 +64,11 @@ local function ForgetNode()
 	lastNodeTime = 0
 end
 
+local function ForgetUnknown()
+	lastUnknownName = nil
+	lastUnknownTime = 0
+end
+
 -- Records the node under the cursor so a following gather cast can be
 -- attributed to it. `node` is nil when the hovered object is unknown; the
 -- previous node is then forgotten so it cannot be misattributed (CQ-001).
@@ -75,6 +82,15 @@ local function RememberNode(node)
 	ForgetNode()
 end
 
+local function RememberUnknown(cleaned)
+	if cleaned and cleaned ~= "" then
+		lastUnknownName = cleaned
+		lastUnknownTime = GetTime()
+		return
+	end
+	ForgetUnknown()
+end
+
 -- The key of the node hovered within the last NODE_KEY_SECONDS for `prof`,
 -- or nil (and the memory is cleared once it has expired).
 function ns.RecentNodeKey(prof)
@@ -86,6 +102,23 @@ function ns.RecentNodeKey(prof)
 		return nil
 	end
 	return lastNodeKey
+end
+
+-- Cleaned object name hovered within NODE_KEY_SECONDS that had no ExactNode
+-- match (used to learn Forever-only herbs/ores on a successful gather).
+function ns.RecentUnknownName()
+	if not lastUnknownName then
+		return nil
+	end
+	if GetTime() - lastUnknownTime > NODE_KEY_SECONDS then
+		ForgetUnknown()
+		return nil
+	end
+	return lastUnknownName
+end
+
+function ns.ForgetUnknownName()
+	ForgetUnknown()
 end
 
 -- `trackNode` is true only for Object and MinimapMouseover tooltips, where
@@ -107,7 +140,16 @@ function ns.ApplyTooltip(tooltip, data, trackNode)
 	if not raw:find("\n", 1, true) then
 		local line, matched, node, cleaned = ApplyLine(db, raw)
 		if trackNode then
-			RememberNode(node)
+			if node then
+				RememberNode(node)
+				ForgetUnknown()
+			elseif cleaned then
+				RememberUnknown(cleaned)
+				ForgetNode()
+			else
+				ForgetNode()
+				ForgetUnknown()
+			end
 		end
 		if not matched then
 			if not node then
@@ -126,6 +168,8 @@ function ns.ApplyTooltip(tooltip, data, trackNode)
 	local index = 0
 	local nodeCount = 0
 	local singleNode
+	local unknownCount = 0
+	local singleUnknown
 	for line in (raw .. "\n"):gmatch("(.-)\n") do
 		index = index + 1
 		local nextLine, lineMatched, node, cleaned = ApplyLine(db, line)
@@ -136,6 +180,9 @@ function ns.ApplyTooltip(tooltip, data, trackNode)
 			known = true
 			nodeCount = nodeCount + 1
 			singleNode = node
+		elseif cleaned and cleaned ~= "" then
+			unknownCount = unknownCount + 1
+			singleUnknown = cleaned
 		end
 		if lineMatched then
 			matched = true
@@ -143,8 +190,17 @@ function ns.ApplyTooltip(tooltip, data, trackNode)
 		parts[#parts + 1] = nextLine
 	end
 	if trackNode then
-		-- Only an unambiguous stack (exactly one known node) is remembered.
-		RememberNode(nodeCount == 1 and singleNode or nil)
+		-- Only an unambiguous stack is remembered (CQ-001).
+		if nodeCount == 1 then
+			RememberNode(singleNode)
+			ForgetUnknown()
+		elseif nodeCount == 0 and unknownCount == 1 then
+			ForgetNode()
+			RememberUnknown(singleUnknown)
+		else
+			ForgetNode()
+			ForgetUnknown()
+		end
 	end
 
 	if not matched then
