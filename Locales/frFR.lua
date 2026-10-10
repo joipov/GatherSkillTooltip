@@ -53,6 +53,7 @@ ns.RegisterLocale({
 	EXAMPLE_HERB = "Pacifique",
 }, {
 	["Pacifique"] = "Peacebloom",
+	["Fleur de paix flétrie"] = "Wilted Peacebloom",
 	["Feuillargent"] = "Silverleaf",
 	["Terrestrine"] = "Earthroot",
 	["Mage royal"] = "Mageroyal",
@@ -82,6 +83,8 @@ ns.RegisterLocale({
 	["Calot de glace"] = "Icecap",
 	["Lotus noir"] = "Black Lotus",
 	["Filon de cuivre"] = "Copper Vein",
+	["Filon de cuivre faible"] = "Weak Copper Vein",
+	["Filon de cuivre pauvre"] = "Poor Copper Vein",
 	["Filon d'étain"] = "Tin Vein",
 	["Filon d’étain"] = "Tin Vein",
 	["Filon d'argent"] = "Silver Vein",

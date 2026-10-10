@@ -53,6 +53,7 @@ ns.RegisterLocale({
 	EXAMPLE_HERB = "평온초",
 }, {
 	["평온초"] = "Peacebloom",
+	["시든 평온초"] = "Wilted Peacebloom",
 	["은엽수 덤불"] = "Silverleaf",
 	["뱀뿌리"] = "Earthroot",
 	["마법초"] = "Mageroyal",
@@ -81,6 +82,8 @@ ns.RegisterLocale({
 	["얼음송이"] = "Icecap",
 	["검은 연꽃"] = "Black Lotus",
 	["구리 광맥"] = "Copper Vein",
+	["약한 구리 광맥"] = "Weak Copper Vein",
+	["빈약한 구리 광맥"] = "Poor Copper Vein",
 	["주석 광맥"] = "Tin Vein",
 	["은 광맥"] = "Silver Vein",
 	["철 광맥"] = "Iron Deposit",

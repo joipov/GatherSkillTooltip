@@ -11,7 +11,7 @@
 ## Notes-zhCN: 将鼠标放在草药或矿石上时显示你的技能和所需技能，小地图标记和世界里的节点都有效。也会显示在可剥皮生物的等级旁边。
 ## Notes-zhTW: 將滑鼠放在草藥或礦石上時顯示你的技能和所需技能，小地圖標記和世界裡的節點都有效。也會顯示在可剝皮生物的等級旁邊。
 ## Author: GatherSkillTooltip
-## Version: 2.0.1
+## Version: 2.0.2
 ## SavedVariables: GatherSkillTooltipDB
 ## OptionalDeps: LibDataBroker-1.1, LibDBIcon-1.0
 ## IconTexture: Interface\Icons\INV_Misc_Flower_02

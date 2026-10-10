@@ -14,6 +14,10 @@ function ns.Print(text)
 	print(ns.PRINT_PREFIX .. " " .. text)
 end
 
+function ns.PrintLoginHint()
+	ns.Print(ns.L.LOGIN_HINT or "Type |cffffffff/gst|r to open settings.")
+end
+
 -- Debug output; only when `/gst debug` is on.
 function ns.Debug(...)
 	if ns.db and ns.db.debug then

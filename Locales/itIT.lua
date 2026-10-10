@@ -53,6 +53,7 @@ ns.RegisterLocale({
 	EXAMPLE_HERB = "Sbocciapace",
 }, {
 	["Sbocciapace"] = "Peacebloom",
+	["Fiore della pace appassito"] = "Wilted Peacebloom",
 	["Fogliargenta"] = "Silverleaf",
 	["Bulboterro"] = "Earthroot",
 	["Magareale"] = "Mageroyal",
@@ -80,6 +81,8 @@ ns.RegisterLocale({
 	["Corolla Invernale"] = "Icecap",
 	["Loto Nero"] = "Black Lotus",
 	["Vena di Rame"] = "Copper Vein",
+	["Vena di rame debole"] = "Weak Copper Vein",
+	["Vena di rame povera"] = "Poor Copper Vein",
 	["Vena di Stagno"] = "Tin Vein",
 	["Vena d'Argento"] = "Silver Vein",
 	["Vena d’Argento"] = "Silver Vein",

@@ -53,7 +53,7 @@ end
 
 local herb = "herb"
 local mine = "mine"
-local copper = Node(1, 25, 65, 100, mine)
+local copper = Node(1, 25, 50, 100, mine)
 -- Forever starter herbs share Classic bands (Lock orange 1).
 local peacebloom = Node(1, 25, 50, 100, herb)
 local silverleaf = Node(1, 25, 50, 100, herb)
@@ -92,6 +92,7 @@ ns.NODES = {
 
 	["Copper Vein"] = copper,
 	["Poor Copper Vein"] = copper,
+	["Weak Copper Vein"] = copper,
 	["Minor Copper Vein"] = copper,
 	["Lesser Copper Vein"] = copper,
 	["Small Copper Vein"] = copper,
