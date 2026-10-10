@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.0.6
+
+Settings wording is shorter and matches the other Joipov addons.
+
+### Changed
+
+- **Minimap button** is sentence case.
+- **Chat when you learn something**, the skinning line, text size, and reset are shorter.
+
 ## 2.0.5
 
 The minimap button is on by default, including saves that still had it off.
