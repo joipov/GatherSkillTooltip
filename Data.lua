@@ -1,6 +1,8 @@
 local _, ns = ...
 
+-- TITLE is the LibDBIcon object key. DISPLAY is the name players see.
 ns.TITLE = "GatherSkillTooltip"
+ns.DISPLAY = "Gather Skill Tooltip"
 
 ns.HERB_SKILL_LINE = 182
 ns.MINE_SKILL_LINE = 186

@@ -693,3 +693,9 @@ No debug session was available. The plan says not to delete or retarget these fr
 - **CQ-104.** No locale aliases and no `LEARNED_NODE` translations were added. Those names have not been read from the client.
 
 Part 6 steps 4 through 7 are still an in-game pass. No profiler numbers were taken.
+
+## 2.0.3 alignment
+
+TOC, docs, and packaging now match the other Joipov addons. `AllowLoadGameType` has its colon. Tooltip skill text is unchanged. Reminder position and settings reset are in CHANGELOG.md. 2.0.4 adds the text size slider.
+
+`assets/` is release media for CurseForge and Wago. It is not loaded by the TOC, not shipped in the zip, and not part of this audit.

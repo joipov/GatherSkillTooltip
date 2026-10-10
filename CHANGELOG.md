@@ -1,5 +1,31 @@
 # Changelog
 
+## 2.0.4
+
+The reminder text size is a slider.
+
+### Added
+
+- **Text size** runs from 10 to 32 for the tracking warning and the trainer reminder. 20 is the large size it used before.
+
+## 2.0.3
+
+The reminder can be moved, and the addon loads on Forever again.
+
+### Fixed
+
+- Forever loads the addon. The game-type line was missing a colon.
+
+### Added
+
+- **Unlock position** shows the reminder so you can drag it. Right-click locks it. A reload locks it too. The position is saved.
+- **Reset settings**, and `/gst reset`, put the checkboxes, reminder position, and minimap button back to default. Learned herbs, ores, and skinning stay.
+
+### Changed
+
+- Chat lines are printed by this addon. Logging in tells you `/gst`.
+- The addon list name is Gather Skill Tooltip.
+
 ## 2.0.2
 
 Copper Vein difficulty colors, and names for Forever starter nodes.

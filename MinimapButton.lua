@@ -34,6 +34,21 @@ local function MinimapIconDB()
 	return icon
 end
 
+-- Moves the launcher back to db.minimapAngle. Used by the settings reset.
+function ns.SyncMinimapIconPosition()
+	if not ns.db then
+		return
+	end
+	local icon = ns.db.minimapIcon
+	if type(icon) == "table" then
+		icon.minimapPos = ns.db.minimapAngle
+	end
+	if ldbIcon and ldbIcon.Refresh and icon then
+		ldbIcon:Refresh(ns.TITLE, icon)
+	end
+	UpdateMinimapButtonPosition()
+end
+
 function ns.UpdateMinimapButton()
 	if not ns.db then
 		return
@@ -62,7 +77,7 @@ local function OnLauncherClick()
 end
 
 local function OnLauncherTooltip(tt)
-	tt:AddLine(ns.TITLE)
+	tt:AddLine(ns.DISPLAY)
 	tt:AddLine(ns.L.CLICK_SETTINGS, 1, 1, 1)
 end
 
@@ -82,7 +97,7 @@ local function TryLibDBIcon()
 	if not obj then
 		obj = ldb:NewDataObject(ns.TITLE, {
 			type = "launcher",
-			text = ns.TITLE,
+			text = ns.DISPLAY,
 			icon = ICON_TEXTURE,
 			OnClick = OnLauncherClick,
 			OnTooltipShow = OnLauncherTooltip,
@@ -116,7 +131,7 @@ end
 
 local function OnButtonEnter(self)
 	GameTooltip:SetOwner(self, "ANCHOR_LEFT")
-	GameTooltip:SetText(ns.TITLE)
+	GameTooltip:SetText(ns.DISPLAY)
 	GameTooltip:AddLine(ns.L.CLICK_SETTINGS, 1, 1, 1)
 	GameTooltip:AddLine(ns.L.DRAG_MOVE, 0.7, 0.7, 0.7)
 	GameTooltip:Show()

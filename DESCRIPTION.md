@@ -16,11 +16,11 @@ A finished gather or skin corrects that guess for that node, or that skinning le
 
 Names, settings, and the skinning label follow the client language: English, German, French, Spanish, Italian, Portuguese, Korean, and both Chinese clients. A German client keeps **Maguskönigskraut (42/50)**. Not Russian. The addon name stays GatherSkillTooltip, and `/gst` stays `/gst`.
 
-Forever allows one tracking spell at a time. If you know Herbalism or Mining and both Find Herbs and Find Minerals are off, a warning stays in the middle of the screen until you turn one on, or turn the warning off. One spell is enough if you have both professions. Skinning never raises it.
+Forever allows one tracking spell at a time. If you know Herbalism or Mining and both Find Herbs and Find Minerals are off, a warning stays on screen until you turn one on, or turn the warning off. It starts in the middle. Text size and Unlock position shrink it and move it. One spell is enough if you have both professions. Skinning never raises it.
 
 ## Settings
 
-Open with `/gst`, `/gatherskilltooltip`, the minimap button, or Esc > Options > AddOns > GatherSkillTooltip. Text follows the client language. Everything defaults to on except the two marked off.
+Open with `/gst`, `/gatherskilltooltip`, the minimap button, or Esc > Options > AddOns > Gather Skill Tooltip. Text follows the client language. Everything defaults to on except where a line says off.
 
 *   **Enable GatherSkillTooltip** — master switch. Off means no tooltip changes and no warnings. What was learned is kept.
 *   **Herbalism / Mining / Skinning** — which professions get the extra tooltip.
@@ -29,7 +29,10 @@ Open with `/gst`, `/gatherskilltooltip`, the minimap button, or Esc > Options > 
 *   **Color by difficulty** — colors the name or the skinning text. Starts from the table, then follows what you have gathered. If skill, required skill, and color are all off, the tooltip is left alone.
 *   **Chat when something is learned** — off by default. One line when a creature is learned as skinnable or not, when an unknown herb or ore is learned from gathering, or when a color changes. Learning still happens when this is off.
 *   **Warn if gathering tracking is off** — the on-screen tracking warning. One of Find Herbs or Find Minerals is enough.
-*   **Remind me to train the next rank** — a short message when you gather or skin at your current cap and a trainer still has a higher rank.
+*   **Text size** — size of the tracking warning and the trainer reminder. 20 is the large default. The slider runs from 10 to 32.
+*   **Unlock position** — off by default. Shows the reminder so you can drag it. Right-click locks it. A reload locks it too.
+*   **Remind me to train the next rank** — a short message when you gather or skin at your current cap and a trainer still has a higher rank. It uses the same size and position as the tracking warning.
+*   **Reset settings** — checkboxes, reminder position, and minimap button go back to default. Learned herbs, ores, and skinning stay. `/gst reset` does the same.
 *   **Show minimap button** — off by default. Flower button for settings. Ellesmere places it with the other addon buttons. On the minimap itself, you can drag it.
 
 `/gst debug` prints unmatched herb and ore names in chat if Forever adds a node that is not in the table, until that name has been learned by gathering.

@@ -1,5 +1,5 @@
 ## Interface: 16001
-## Title: GatherSkillTooltip
+## Title: |cffc4b5fdJoipov|r Gather Skill Tooltip
 ## Notes: Shows your skill and the required skill when you hover a herb or ore, on a minimap pin or in the world, and beside the level of a creature you can skin.
 ## Notes-deDE: Zeigt deine Fertigkeit und die benötigte Fertigkeit, wenn du über ein Kraut oder Erz fährst, auf einem Minikarten-Pin oder in der Welt, und neben der Stufe einer Kreatur, die du häuten kannst.
 ## Notes-frFR: Affiche votre compétence et la compétence requise quand vous survolez une herbe ou un minerai, sur un repère de minicarte ou dans le monde, et à côté du niveau d'une créature que vous pouvez dépecer.
@@ -10,14 +10,16 @@
 ## Notes-koKR: 미니맵 핀이나 세계에서 약초나 광석에 커서를 올리면 내 숙련도와 필요 숙련도를 보여 줍니다. 무두질할 수 있는 생물의 레벨 옆에도 표시합니다.
 ## Notes-zhCN: 将鼠标放在草药或矿石上时显示你的技能和所需技能，小地图标记和世界里的节点都有效。也会显示在可剥皮生物的等级旁边。
 ## Notes-zhTW: 將滑鼠放在草藥或礦石上時顯示你的技能和所需技能，小地圖標記和世界裡的節點都有效。也會顯示在可剝皮生物的等級旁邊。
-## Author: GatherSkillTooltip
-## Version: 2.0.2
+## Author: Joipov
+## Version: 2.0.4
+## Category: Tooltip
 ## SavedVariables: GatherSkillTooltipDB
 ## OptionalDeps: LibDataBroker-1.1, LibDBIcon-1.0
 ## IconTexture: Interface\Icons\INV_Misc_Flower_02
 ## AddonCompartmentFunc: GatherSkillTooltip_OnAddonCompartmentClick
-## AllowLoadGameType camelot
-## Category: Professions
+## X-License: All Rights Reserved
+## X-Website: https://github.com/joipov/GatherSkillTooltip
+## AllowLoadGameType: camelot
 
 Data.lua
 Locales\enUS.lua

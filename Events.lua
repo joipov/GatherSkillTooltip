@@ -55,11 +55,7 @@ end
 
 function handlers.PLAYER_LOGIN()
 	ns.CreateMinimapButton()
-	if C_Timer and C_Timer.After then
-		C_Timer.After(1, ns.PrintLoginHint)
-	else
-		ns.PrintLoginHint()
-	end
+	ns.Print("Type |cffffffff/gst|r to open settings.")
 end
 
 function handlers.PLAYER_ENTERING_WORLD()

@@ -8,6 +8,7 @@ self = false
 exclude_files = {
 	".release/",
 	".annotations/",
+	"assets/",
 }
 
 -- Unit tests run under plain Lua 5.1 / LuaJIT and stub the few WoW globals
@@ -78,6 +79,8 @@ read_globals = {
 	"UIParent",
 	"Settings",
 	"CreateSettingsListSectionHeaderInitializer",
+	"CreateSettingsButtonInitializer",
+	"MinimalSliderWithSteppersMixin",
 	"TooltipDataProcessor",
 
 	-- Global strings

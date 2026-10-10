@@ -26,6 +26,7 @@ Target client: World of Warcraft **Forever** (`camelot`, TOC `## Interface: 1600
 | Command | Effect |
 | --- | --- |
 | `/gst`, `/gatherskilltooltip` | Open the settings panel |
+| `/gst reset` | Reset settings to default. Learned herbs, ores, and skinning stay |
 | `/gst debug` | Toggle debug output (unmatched tooltip names, learning traces) |
 | `/gst stats` | Print the GameTooltip fallback counters (diagnostic) |
 
@@ -57,7 +58,7 @@ The repository lives outside the game folder; the AddOns entry is a
 directory junction to it:
 
 ```
-mklink /J "C:\Program Files (x86)\World of Warcraft\_classic_beta_\Interface\AddOns\GatherSkillTooltip" "%USERPROFILE%\dev\GatherSkillTooltip"
+mklink /J "C:\Program Files (x86)\World of Warcraft\_classic_beta_\Interface\AddOns\GatherSkillTooltip" "D:\Repos\Joipov\GatherSkillTooltip"
 ```
 
 Static checks (no game client needed):
@@ -67,13 +68,23 @@ luacheck .            # .luacheckrc: Lua 5.1, explicit WoW globals
 luajit tests/run.lua  # or: lua5.1 tests/run.lua
 ```
 
-LuaLS uses `.luarc.json`; the repo-local `.annotations/` folder declares the
-Blizzard globals the Ketho WoW API annotations lack.
+LuaLS uses `.luarc.json` and Ketho's WoW API annotations. The repo-local
+`.annotations/` folder declares Blizzard globals those annotations lack.
 
-Releases: push an annotated tag (`git tag -a 2.0.0 -m "2.0.0"`); the
+`assets/` is release media for CurseForge and Wago (screenshots, and a logo
+when one exists). The game does not load it, and it is not part of the addon
+zip. Do not delete it during cleanup.
+
+Local zip, with the addon folder at the root, written to `.release/`:
+
+```
+powershell -File package.ps1
+```
+
+Releases: push an annotated tag (`git tag -a 2.0.4 -m "2.0.4"`). The
 `Package and release` workflow runs BigWigsMods/packager, which reads the game
 version from the TOC and the manual changelog from `CHANGELOG.md`.
-`CODE_AUDIT.md` holds the audit and remediation record.
+`CODE_AUDIT.md` holds the audit and remediation record and is not shipped.
 
 ## Verifying in-game
 
