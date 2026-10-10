@@ -24,6 +24,7 @@ local defaults = {
 
 -- Option keys only. Learned gather data is not in this table.
 ns.defaults = defaults
+ns.DB_DEFAULTS = defaults
 
 -- Bump when a one-time migration is added to MigrateDB.
 local DB_VERSION = 6

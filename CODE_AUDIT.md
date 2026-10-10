@@ -699,3 +699,11 @@ Part 6 steps 4 through 7 are still an in-game pass. No profiler numbers were tak
 TOC, docs, and packaging now match the other Joipov addons. `AllowLoadGameType` has its colon. Tooltip skill text is unchanged. Reminder position and settings reset are in CHANGELOG.md. 2.0.4 adds the text size slider.
 
 `assets/` is release media for CurseForge and Wago. It is not loaded by the TOC, not shipped in the zip, and not part of this audit.
+
+## Practices (2026-10-10)
+
+Checked against the Joipov house style (one handler table, `ADDON_LOADED` dropped after this addon loads, `RegisterUnitEvent` for the player, `C_Timer` instead of an idle `OnUpdate`) and against Warcraft Wiki secret values plus the Ketho WoW API library in `.luarc.json`.
+
+This addon already followed that shape. This pass only added the `ns.DB_DEFAULTS` alias next to `ns.defaults`, and listed `LibStub` in `OptionalDeps` with the other minimap users.
+
+Left alone: tooltip text, learning, `GetProfessionInfo`, the tracking `UNIT_AURA` registration, and the open items in Phase 2 (CQ-103, COMPAT-101, UI-101, UI-102, CQ-104).

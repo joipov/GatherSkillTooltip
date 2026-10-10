@@ -14,7 +14,7 @@
 ## Version: 2.0.7
 ## Category: |cffc4b5fdJoipov|r Tools
 ## SavedVariables: GatherSkillTooltipDB
-## OptionalDeps: LibDataBroker-1.1, LibDBIcon-1.0
+## OptionalDeps: LibStub, LibDataBroker-1.1, LibDBIcon-1.0
 ## IconTexture: Interface\Icons\INV_Misc_Flower_02
 ## AddonCompartmentFunc: GatherSkillTooltip_OnAddonCompartmentClick
 ## AddonCompartmentFuncOnEnter: GatherSkillTooltip_OnAddonCompartmentEnter
