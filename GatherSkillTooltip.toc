@@ -1,5 +1,5 @@
 ## Interface: 16001
-## Title: |cffc4b5fdJoipov|r Gather Skill Tooltip
+## Title: Gather Skill Tooltip
 ## Notes: Shows your skill and the required skill when you hover a herb or ore, on a minimap pin or in the world, and beside the level of a creature you can skin.
 ## Notes-deDE: Zeigt deine Fertigkeit und die benötigte Fertigkeit, wenn du über ein Kraut oder Erz fährst, auf einem Minikarten-Pin oder in der Welt, und neben der Stufe einer Kreatur, die du häuten kannst.
 ## Notes-frFR: Affiche votre compétence et la compétence requise quand vous survolez une herbe ou un minerai, sur un repère de minicarte ou dans le monde, et à côté du niveau d'une créature que vous pouvez dépecer.
@@ -12,7 +12,7 @@
 ## Notes-zhTW: 將滑鼠放在草藥或礦石上時顯示你的技能和所需技能，小地圖標記和世界裡的節點都有效。也會顯示在可剝皮生物的等級旁邊。
 ## Author: Joipov
 ## Version: 2.0.4
-## Category: Tooltip
+## Category: |cffc4b5fdJoipov|r Tools
 ## SavedVariables: GatherSkillTooltipDB
 ## OptionalDeps: LibDataBroker-1.1, LibDBIcon-1.0
 ## IconTexture: Interface\Icons\INV_Misc_Flower_02
