@@ -125,6 +125,8 @@ end)
 test("NODE_BY_KEY maps shared nodes to one key", function()
 	local copper = ns.NODES["Copper Vein"]
 	eq(ns.NODES["Poor Copper Vein"], copper, "shared table")
+	eq(ns.NODES["Weak Copper Vein"], copper, "shared table")
+	eq(copper.green, 50, "copper turns green at 50")
 	eq(copper.key, "Copper Vein", "lexically smallest name wins")
 	eq(ns.NODE_BY_KEY["Copper Vein"], copper)
 	eq(ns.NODE_BY_KEY["Poor Copper Vein"], nil)
@@ -134,6 +136,9 @@ end)
 test("RegisterLocale overlays strings and adds aliases without touching NODES", function()
 	eq(ns.L.EXAMPLE_HERB, "Friedensblume")
 	eq(ns.LOOKUP["Friedensblume"], ns.NODES["Peacebloom"])
+	eq(ns.LOOKUP["Verwelkte Friedensblume"], ns.NODES["Peacebloom"])
+	eq(ns.LOOKUP["Schwaches Kupfervorkommen"], ns.NODES["Copper Vein"])
+	eq(ns.LOOKUP["Mageres Kupfervorkommen"], ns.NODES["Copper Vein"])
 	eq(ns.LOOKUP["Peacebloom"], ns.NODES["Peacebloom"])
 	eq(ns.NODES["Friedensblume"], nil)
 end)
@@ -211,7 +216,7 @@ end)
 
 test("NoteGatherResult and ObservedColor", function()
 	local db = freshDB()
-	local node = ns.NODES["Copper Vein"] -- 1/25/65/100
+	local node = ns.NODES["Copper Vein"] -- 1/25/50/100
 	local key = node.key
 	eq(ns.ObservedColor(100, node, 1, key), P.grey, "table color without observations")
 	-- 20 misses at 100 with no gain: grey (already grey here); at 70 it flips green -> grey.

@@ -53,6 +53,7 @@ ns.RegisterLocale({
 	EXAMPLE_HERB = "Botão-da-paz",
 }, {
 	["Botão-da-paz"] = "Peacebloom",
+	["Flor da paz murcha"] = "Wilted Peacebloom",
 	["Folha-prata"] = "Silverleaf",
 	["Raiz-telúrica"] = "Earthroot",
 	["Magi-real"] = "Mageroyal",
@@ -81,6 +82,8 @@ ns.RegisterLocale({
 	["Chapéu-de-gelo"] = "Icecap",
 	["Lótus Preto"] = "Black Lotus",
 	["Veio de Cobre"] = "Copper Vein",
+	["Veio de cobre fraco"] = "Weak Copper Vein",
+	["Veio de cobre pobre"] = "Poor Copper Vein",
 	["Veio de Estanho"] = "Tin Vein",
 	["Veio de Prata"] = "Silver Vein",
 	["Depósito de Ferro"] = "Iron Deposit",

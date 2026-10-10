@@ -1,5 +1,19 @@
 # Changelog
 
+## 2.0.2
+
+Copper Vein difficulty colors, and names for Forever starter nodes.
+
+### Fixed
+
+- Copper Vein turns green at 50. The band is 1 / 25 / 50 / 100. From 50 to 64
+  the tooltip was calling it green while it is still yellow.
+
+### Added
+
+- **Weak Copper Vein** uses the same skill band as Copper Vein.
+- Locale names for Wilted Peacebloom, Weak Copper Vein, and Poor Copper Vein.
+
 ## 2.0.1
 
 Forever gather nodes, learning unknown herbs and ores from play, and

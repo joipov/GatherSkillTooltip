@@ -48,6 +48,7 @@ ns.L = {
 	DEBUG_OFF = "off",
 	SPELL_OFF = "%s is off",
 	CLICK_SETTINGS = "Click for settings.",
+	LOGIN_HINT = "Type |cffffffff/gst|r to open settings.",
 	DRAG_MOVE = "Drag to move.",
 	FIND_HERBS = "Find Herbs",
 	FIND_MINERALS = "Find Minerals",

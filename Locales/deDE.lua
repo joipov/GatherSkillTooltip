@@ -53,6 +53,7 @@ ns.RegisterLocale({
 	EXAMPLE_HERB = "Friedensblume",
 }, {
 	["Friedensblume"] = "Peacebloom",
+	["Verwelkte Friedensblume"] = "Wilted Peacebloom",
 	["Silberblatt"] = "Silverleaf",
 	["Erdwurzel"] = "Earthroot",
 	["Maguskönigskraut"] = "Mageroyal",
@@ -82,6 +83,8 @@ ns.RegisterLocale({
 	["Eiskappe"] = "Icecap",
 	["Schwarzer Lotus"] = "Black Lotus",
 	["Kupfervorkommen"] = "Copper Vein",
+	["Schwaches Kupfervorkommen"] = "Weak Copper Vein",
+	["Mageres Kupfervorkommen"] = "Poor Copper Vein",
 	["Zinnvorkommen"] = "Tin Vein",
 	["Silbervorkommen"] = "Silver Vein",
 	["Eisenvorkommen"] = "Iron Deposit",

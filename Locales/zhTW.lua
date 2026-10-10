@@ -53,6 +53,7 @@ ns.RegisterLocale({
 	EXAMPLE_HERB = "寧神花",
 }, {
 	["寧神花"] = "Peacebloom",
+	["枯萎的寧神花"] = "Wilted Peacebloom",
 	["銀葉草"] = "Silverleaf",
 	["地根草"] = "Earthroot",
 	["魔皇草"] = "Mageroyal",
@@ -81,6 +82,8 @@ ns.RegisterLocale({
 	["冰蓋草"] = "Icecap",
 	["黑蓮花"] = "Black Lotus",
 	["銅礦"] = "Copper Vein",
+	["貧瘠的銅礦脈"] = "Weak Copper Vein",
+	["低劣的銅礦脈"] = "Poor Copper Vein",
 	["錫礦"] = "Tin Vein",
 	["銀礦"] = "Silver Vein",
 	["鐵礦石"] = "Iron Deposit",
