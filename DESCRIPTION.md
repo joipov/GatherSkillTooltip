@@ -27,12 +27,12 @@ Open with `/gst`, `/gatherskilltooltip`, the minimap button, or Esc > Options > 
 *   **Show my skill** — the first number, 42 in Mageroyal (42/50).
 *   **Show required skill** — the second number, 50 in that example. Both, one, or neither. Same switches for skinning. A learned lower requirement replaces the table number.
 *   **Color by difficulty** — colors the name or the skinning text. Starts from the table, then follows what you have gathered. If skill, required skill, and color are all off, the tooltip is left alone.
-*   **Chat when something is learned** — off by default. One line when a creature is learned as skinnable or not, when an unknown herb or ore is learned from gathering, or when a color changes. Learning still happens when this is off.
+*   **Chat when you learn something** — off by default. One line when a creature is learned as skinnable or not, when an unknown herb or ore is learned from gathering, or when a color changes. Learning still happens when this is off.
 *   **Warn if gathering tracking is off** — the on-screen tracking warning. One of Find Herbs or Find Minerals is enough.
 *   **Text size** — size of the tracking warning and the trainer reminder. 20 is the large default. The slider runs from 10 to 32.
 *   **Unlock position** — off by default. Shows the reminder so you can drag it. Right-click locks it. A reload locks it too.
 *   **Remind me to train the next rank** — a short message when you gather or skin at your current cap and a trainer still has a higher rank. It uses the same size and position as the tracking warning.
 *   **Reset settings** — checkboxes, reminder position, and minimap button go back to default. Learned herbs, ores, and skinning stay. `/gst reset` does the same.
-*   **Minimap Button** — on by default. Flower button for settings. Ellesmere places it with the other addon buttons. On the minimap itself, you can drag it.
+*   **Minimap button** — on by default. Flower button for settings. Ellesmere places it with the other addon buttons. On the minimap itself, you can drag it.
 
 `/gst debug` prints unmatched herb and ore names in chat if Forever adds a node that is not in the table, until that name has been learned by gathering.
