@@ -257,11 +257,13 @@ function ns.SkinningBand(level)
 	local band = SKIN_BANDS[level]
 	if not band then
 		local orange = ns.SkinningOrange(level)
+		local yellow = orange + 25
+		local grey = orange + 100
 		band = {
 			orange = orange,
-			yellow = orange + 25,
-			green = orange + 50,
-			grey = orange + 100,
+			yellow = yellow,
+			green = ns.GreenSkill(yellow, grey),
+			grey = grey,
 			prof = "skin",
 			key = "skin:" .. level,
 		}

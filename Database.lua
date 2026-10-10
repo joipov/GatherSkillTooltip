@@ -26,7 +26,7 @@ local defaults = {
 ns.defaults = defaults
 
 -- Bump when a one-time migration is added to MigrateDB.
-local DB_VERSION = 5
+local DB_VERSION = 6
 
 local BANNER_FONT_MIN = 10
 local BANNER_FONT_MAX = 32
@@ -184,6 +184,21 @@ local function MigrateDB(db)
 		-- The button used to default off, and that false was written into
 		-- saved variables. Turn it on once. A later choice stays put.
 		db.showMinimapButton = true
+	end
+	if version < 6 then
+		-- Learned nodes stored green as orange + 50. The client turns a node
+		-- green at the midpoint of yellow and grey.
+		if type(db.customNodes) == "table" and ns.GreenSkill then
+			for _, entry in pairs(db.customNodes) do
+				if type(entry) == "table"
+					and type(entry.orange) == "number"
+					and entry.yellow == entry.orange + 25
+					and entry.green == entry.orange + 50
+					and entry.grey == entry.orange + 100 then
+					entry.green = ns.GreenSkill(entry.yellow, entry.grey)
+				end
+			end
+		end
 	end
 	db.version = DB_VERSION
 end

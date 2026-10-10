@@ -1,5 +1,19 @@
 # Changelog
 
+## 2.0.7
+
+Herb and ore difficulty turns green later, matching the client.
+
+### Fixed
+
+- Kingsblood stays yellow through 186 and turns green at 187. The band is
+  125 / 150 / 187 / 225. At 176 the tooltip was calling it green while it is
+  still yellow.
+- Every other herb and ore uses the same green step, the midpoint of yellow
+  and grey. Copper Vein turns green at 62.
+- Skinning and nodes learned in play use that midpoint. Saves that still have
+  the old learned green are updated once.
+
 ## 2.0.6
 
 Settings wording is shorter and matches the other Joipov addons.
