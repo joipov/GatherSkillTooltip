@@ -33,6 +33,6 @@ Open with `/gst`, `/gatherskilltooltip`, the minimap button, or Esc > Options > 
 *   **Unlock position** — off by default. Shows the reminder so you can drag it. Right-click locks it. A reload locks it too.
 *   **Remind me to train the next rank** — a short message when you gather or skin at your current cap and a trainer still has a higher rank. It uses the same size and position as the tracking warning.
 *   **Reset settings** — checkboxes, reminder position, and minimap button go back to default. Learned herbs, ores, and skinning stay. `/gst reset` does the same.
-*   **Show minimap button** — off by default. Flower button for settings. Ellesmere places it with the other addon buttons. On the minimap itself, you can drag it.
+*   **Minimap Button** — on by default. Flower button for settings. Ellesmere places it with the other addon buttons. On the minimap itself, you can drag it.
 
 `/gst debug` prints unmatched herb and ore names in chat if Forever adds a node that is not in the table, until that name has been learned by gathering.

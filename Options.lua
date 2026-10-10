@@ -21,6 +21,22 @@ function _G.GatherSkillTooltip_OnAddonCompartmentClick()
 	ns.OpenSettings()
 end
 
+function _G.GatherSkillTooltip_OnAddonCompartmentEnter(_, owner)
+	if not GameTooltip then
+		return
+	end
+	GameTooltip:SetOwner(owner or UIParent, "ANCHOR_LEFT")
+	GameTooltip:AddLine(ns.DISPLAY)
+	GameTooltip:AddLine(ns.L.CLICK_SETTINGS, 1, 1, 1)
+	GameTooltip:Show()
+end
+
+function _G.GatherSkillTooltip_OnAddonCompartmentLeave()
+	if GameTooltip then
+		GameTooltip:Hide()
+	end
+end
+
 function ns.InitOptions()
 	if ns.settingsCategory then
 		return
@@ -80,8 +96,7 @@ function ns.InitOptions()
 	local minimapCheckbox = AddCheckbox(
 		"showMinimapButton",
 		L.SHOW_MINIMAP,
-		L.SHOW_MINIMAP_TIP,
-		false
+		L.SHOW_MINIMAP_TIP
 	)
 
 	AddHeader(L.HEADER_PROFESSIONS)

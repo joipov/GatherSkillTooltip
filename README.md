@@ -18,7 +18,7 @@ Target client: World of Warcraft **Forever** (`camelot`, TOC `## Interface: 1600
   lowers it; repeated misses without a gain turn a node grey.
 - Warnings: an on-screen banner when Find Herbs / Find Minerals is off and
   you know the profession, and a trainer reminder when a profession is capped.
-- Minimap launcher via LibDBIcon when present, otherwise a built-in button;
+- Minimap launcher via LibDBIcon when present, otherwise a built-in button. On by default.
   Addon Compartment entry; `/gst` opens the settings.
 
 ## Commands

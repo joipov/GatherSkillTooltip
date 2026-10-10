@@ -268,7 +268,7 @@ end)
 
 test("LoadDB applies defaults and versions a fresh table", function()
 	local db = ns.LoadDB(nil)
-	eq(db.version, 4)
+	eq(db.version, 5)
 	eq(db.enabled, true)
 	eq(db.learnChat, false)
 	eq(db.minimapAngle, 200)
@@ -294,7 +294,7 @@ test("LoadDB migrates 1.x data once", function()
 	}
 	local db = ns.LoadDB(saved)
 	eq(db, saved, "same table")
-	eq(db.version, 4)
+	eq(db.version, 5)
 	eq(db.minimapAngle, 200, "old default angle moved")
 	eq(db.minimapIcon.minimapPos, 200, "old default band re-aligned")
 	eq(db.minimapIcon.hide, nil, "non-boolean hide dropped")
@@ -315,13 +315,13 @@ test("ResetSettings restores options and keeps learned data", function()
 	local db = ns.LoadDB({
 		enabled = false,
 		learnChat = true,
-		showMinimapButton = true,
+		showMinimapButton = false,
 		debug = true,
 		bannerFont = 14,
 		bannerX = 40,
 		bannerY = -20,
 		minimapAngle = 15,
-		minimapIcon = { minimapPos = 15, hide = false },
+		minimapIcon = { minimapPos = 15, hide = true },
 		gather = {
 			["Mystery Herb"] = { misses = {}, gains = { [40] = 1 } },
 		},
@@ -333,7 +333,7 @@ test("ResetSettings restores options and keeps learned data", function()
 	ns.ResetSettings(db)
 	eq(db.enabled, true)
 	eq(db.learnChat, false)
-	eq(db.showMinimapButton, false)
+	eq(db.showMinimapButton, true)
 	eq(db.debug, false)
 	eq(db.bannerFont, 20)
 	eq(db.bannerUnlocked, false)
@@ -341,7 +341,7 @@ test("ResetSettings restores options and keeps learned data", function()
 	eq(db.bannerY, 80)
 	eq(db.minimapAngle, 200)
 	eq(db.minimapIcon.minimapPos, 200)
-	eq(db.minimapIcon.hide, true)
+	eq(db.minimapIcon.hide, false)
 	eq(db.gather["Mystery Herb"].gains[40], 1)
 	eq(db.customNodes["Mystery Herb"].orange, 40)
 end)
@@ -350,7 +350,7 @@ test("LoadDB migrates small text and clamps banner font", function()
 	local small = ns.LoadDB({ version = 3, bannerSmall = true, bannerFont = 20 })
 	eq(small.bannerFont, 12)
 	eq(small.bannerSmall, nil)
-	eq(small.version, 4)
+	eq(small.version, 5)
 	ns.LoadDB(small)
 	eq(small.bannerFont, 12, "small text is not migrated twice")
 	local huge = ns.LoadDB({ bannerFont = 99 })
@@ -432,13 +432,13 @@ test("v2 gainedAt below table orange seeds orangeSeen once", function()
 		},
 	}
 	local db = ns.LoadDB(saved)
-	eq(db.version, 4)
+	eq(db.version, 5)
 	eq(db.gather["Tin Vein"].orangeSeen, 60)
 	eq(db.gather["Copper Vein"].orangeSeen, nil, "gainedAt above the table orange is not a floor")
 	db.gather["Tin Vein"].orangeSeen = nil
 	db.gather["Tin Vein"].gainedAt = 40
 	ns.LoadDB(db)
-	eq(db.version, 4)
+	eq(db.version, 5)
 	eq(db.gather["Tin Vein"].orangeSeen, nil, "a later load does not seed again")
 end)
 
