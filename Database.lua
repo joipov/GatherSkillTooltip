@@ -16,11 +16,34 @@ local defaults = {
 	warnTrain = true,
 	showMinimapButton = false,
 	minimapAngle = 200,
+	bannerFont = 20,
+	bannerX = 0,
+	bannerY = 80,
 	debug = false,
 }
 
+-- Option keys only. Learned gather data is not in this table.
+ns.defaults = defaults
+
 -- Bump when a one-time migration is added to MigrateDB.
-local DB_VERSION = 3
+local DB_VERSION = 4
+
+local BANNER_FONT_MIN = 10
+local BANNER_FONT_MAX = 32
+
+function ns.ClampBannerFont(size)
+	if type(size) ~= "number" then
+		return defaults.bannerFont
+	end
+	size = math.floor(size + 0.5)
+	if size < BANNER_FONT_MIN then
+		return BANNER_FONT_MIN
+	end
+	if size > BANNER_FONT_MAX then
+		return BANNER_FONT_MAX
+	end
+	return size
+end
 
 -- Applies defaults and resets any option whose type no longer matches its
 -- default (all options are booleans or numbers), so a corrupted or hand-edited
@@ -150,7 +173,29 @@ local function MigrateDB(db)
 			end
 		end
 	end
+	if version < 4 then
+		-- The short-lived small-text checkbox. 12 is GameFontNormal.
+		if db.bannerSmall == true then
+			db.bannerFont = 12
+		end
+		db.bannerSmall = nil
+	end
 	db.version = DB_VERSION
+end
+
+-- Puts option keys back to default. Learned herbs, ores, and skinning stay.
+function ns.ResetSettings(db)
+	if type(db) ~= "table" then
+		return
+	end
+	for key, value in pairs(defaults) do
+		db[key] = value
+	end
+	db.bannerUnlocked = false
+	if type(db.minimapIcon) == "table" then
+		db.minimapIcon.minimapPos = db.minimapAngle
+		db.minimapIcon.hide = not db.showMinimapButton
+	end
 end
 
 -- Returns the validated, migrated database table for `saved` (the raw
@@ -159,6 +204,10 @@ function ns.LoadDB(saved)
 	local db = type(saved) == "table" and saved or {}
 	MigrateDB(db)
 	CopyDefaults(db)
+	db.bannerFont = ns.ClampBannerFont(db.bannerFont)
+	-- The unlock checkbox is session-only, same as LootRollMover's anchor.
+	-- A reload locks the banner; bannerX and bannerY are what persist.
+	db.bannerUnlocked = false
 	for _, key in ipairs({ "gather", "skinIds", "minimapIcon", "customNodes" }) do
 		if type(db[key]) ~= "table" then
 			db[key] = {}

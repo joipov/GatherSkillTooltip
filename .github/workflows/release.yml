@@ -3,10 +3,9 @@
 # uploads it to CurseForge / Wago / WoWInterface.
 #
 # The game version is taken from the TOC: release.sh maps
-# `## Interface: 16xxx` to the "forever" game type (release.sh, game_type
-# detection), so no `-g` argument is needed. Upload targets are read from
-# `## X-Curse-Project-ID` / `## X-Wago-ID` / `## X-WoWI-ID` lines in the TOC;
-# add the ones you use.
+# `## Interface: 16xxx` to the "forever" game type, so no `-g` argument is
+# needed. Upload targets are read from `## X-Curse-Project-ID` /
+# `## X-Wago-ID` / `## X-WoWI-ID` lines in the TOC; add the ones you use.
 name: Package and release
 
 on:

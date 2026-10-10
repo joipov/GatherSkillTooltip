@@ -2,13 +2,16 @@ local _, ns = ...
 
 local Settings = Settings
 local CreateSettingsListSectionHeaderInitializer = CreateSettingsListSectionHeaderInitializer
+local CreateSettingsButtonInitializer = CreateSettingsButtonInitializer
+
+local optionSettings = {}
 
 function ns.OpenSettings()
 	if not ns.settingsCategory then
 		ns.InitOptions()
 	end
 	if not ns.settingsCategory then
-		print("|cff88ccff" .. ns.TITLE .. ":|r " .. ns.L.OPEN_FAILED)
+		ns.Print(ns.L.OPEN_FAILED)
 		return
 	end
 	Settings.OpenToCategory(ns.settingsCategory:GetID())
@@ -31,7 +34,7 @@ function ns.InitOptions()
 	local findHerbs = ns.SpellName(ns.FIND_HERBS_SPELL, L.FIND_HERBS)
 	local findMinerals = ns.SpellName(ns.FIND_MINERALS_SPELL, L.FIND_MINERALS)
 
-	local category, layout = Settings.RegisterVerticalLayoutCategory(ns.TITLE)
+	local category, layout = Settings.RegisterVerticalLayoutCategory(ns.DISPLAY)
 	ns.settingsCategory = category
 
 	local function AddCheckbox(key, label, tooltip, default)
@@ -56,8 +59,12 @@ function ns.InitOptions()
 			if not ns.db.enabled or not ns.db.warnTrain then
 				ns.HideTrainWarning()
 			end
+			if key == "enabled" or key == "bannerUnlocked" then
+				ns.ApplyBannerLayout()
+			end
 		end
 		setting:SetValueChangedCallback(OnChanged)
+		optionSettings[key] = setting
 		return Settings.CreateCheckbox(category, setting, tooltip), setting
 	end
 
@@ -67,7 +74,7 @@ function ns.InitOptions()
 
 	local enabledCheckbox, enabledSetting = AddCheckbox(
 		"enabled",
-		L.ENABLE:format(ns.TITLE),
+		L.ENABLE:format(ns.DISPLAY),
 		L.ENABLE_TIP
 	)
 	local minimapCheckbox = AddCheckbox(
@@ -94,6 +101,37 @@ function ns.InitOptions()
 		L.WARN_TRACKING,
 		L.WARN_TRACKING_TIP:format(findHerbs, findMinerals)
 	)
+	local bannerFontSlider
+	if Settings.CreateSliderOptions and Settings.CreateSlider then
+		local fontSetting = Settings.RegisterAddOnSetting(
+			category,
+			"GATHERSKILLTOOLTIP_BANNERFONT",
+			"bannerFont",
+			ns.db,
+			Settings.VarType.Number,
+			L.BANNER_SIZE,
+			ns.defaults.bannerFont
+		)
+		fontSetting:SetValueChangedCallback(function()
+			ns.db.bannerFont = ns.ClampBannerFont(ns.db.bannerFont)
+			ns.ApplyBannerLayout()
+		end)
+		optionSettings.bannerFont = fontSetting
+		local fontOpts = Settings.CreateSliderOptions(10, 32, 1)
+		if MinimalSliderWithSteppersMixin and MinimalSliderWithSteppersMixin.Label then
+			fontOpts:SetLabelFormatter(MinimalSliderWithSteppersMixin.Label.Right, function(value)
+				return tostring(math.floor(value + 0.5))
+			end)
+		end
+		bannerFontSlider = Settings.CreateSlider(category, fontSetting, fontOpts, L.BANNER_SIZE_TIP)
+	end
+	local bannerUnlockCheckbox, bannerUnlockSetting = AddCheckbox(
+		"bannerUnlocked",
+		L.BANNER_UNLOCK,
+		L.BANNER_UNLOCK_TIP,
+		false
+	)
+	ns.bannerUnlockSetting = bannerUnlockSetting
 
 	AddHeader(L.HEADER_TRAINER)
 	local trainCheckbox = AddCheckbox(
@@ -101,6 +139,16 @@ function ns.InitOptions()
 		L.WARN_TRAIN,
 		L.WARN_TRAIN_TIP:format(herbName, mineName, skinName)
 	)
+
+	if CreateSettingsButtonInitializer then
+		layout:AddInitializer(CreateSettingsButtonInitializer(
+			L.RESET_SETTINGS,
+			L.RESET,
+			ns.ResetAllSettings,
+			L.RESET_TIP,
+			true
+		))
+	end
 
 	Settings.RegisterAddOnCategory(category)
 
@@ -116,21 +164,56 @@ function ns.InitOptions()
 		colorCheckbox,
 		learnCheckbox,
 		warnCheckbox,
+		bannerUnlockCheckbox,
 		trainCheckbox,
 		minimapCheckbox,
 	}) do
 		child:SetParentInitializer(enabledCheckbox, MasterEnabled)
 	end
+	if bannerFontSlider then
+		bannerFontSlider:SetParentInitializer(enabledCheckbox, MasterEnabled)
+	end
+end
+
+function ns.ResetAllSettings()
+	local db = ns.db
+	local defaults = ns.defaults
+	if not db or not defaults then
+		return
+	end
+	for key, setting in pairs(optionSettings) do
+		local value = defaults[key]
+		if key == "bannerUnlocked" then
+			value = false
+		end
+		if value ~= nil and setting:GetValue() ~= value then
+			setting:SetValue(value)
+		end
+	end
+	ns.ResetSettings(db)
+	ns.UpdateMinimapButton()
+	ns.SyncMinimapIconPosition()
+	ns.ApplyBannerLayout()
+	ns.QueueTrackingCheck()
+	ns.UpdateLootEvents()
+	if not db.warnTrain then
+		ns.HideTrainWarning()
+	end
+	ns.Print(ns.L.RESET_DONE)
 end
 
 _G.SLASH_GATHERSKILLTOOLTIP1 = "/gst"
 _G.SLASH_GATHERSKILLTOOLTIP2 = "/gatherskilltooltip"
 _G.SlashCmdList.GATHERSKILLTOOLTIP = function(msg)
 	msg = (msg and msg:match("^%s*(.-)%s*$") or ""):lower()
+	if msg == "reset" then
+		ns.ResetAllSettings()
+		return
+	end
 	if msg == "debug" then
 		if ns.db then
 			ns.db.debug = not ns.db.debug
-			print("|cff88ccff" .. ns.TITLE .. ":|r debug", ns.db.debug and ns.L.DEBUG_ON or ns.L.DEBUG_OFF)
+			ns.Print("debug " .. (ns.db.debug and ns.L.DEBUG_ON or ns.L.DEBUG_OFF))
 		end
 		return
 	end
@@ -138,9 +221,9 @@ _G.SlashCmdList.GATHERSKILLTOOLTIP = function(msg)
 		-- Diagnostic counters (UI-001); English only, not user-facing.
 		local s = ns.fallbackStats
 		if s then
-			print(string.format(
-				"|cff88ccff%s:|r tooltip fallback: shown %d, checked %d, applied %d, retried %d",
-				ns.TITLE, s.shown, s.checked, s.applied, s.retried
+			ns.Print(string.format(
+				"tooltip fallback: shown %d, checked %d, applied %d, retried %d",
+				s.shown, s.checked, s.applied, s.retried
 			))
 		end
 		return

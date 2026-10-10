@@ -8,20 +8,27 @@ local canaccessvalue = canaccessvalue
 local issecrettable = issecrettable
 local canaccesstable = canaccesstable
 
-ns.PRINT_PREFIX = "|cff88ccff" .. ns.TITLE .. ":|r"
-
-function ns.Print(text)
-	print(ns.PRINT_PREFIX .. " " .. text)
+local function Chat(text)
+	print("|cffc4b5fdJoipov|r " .. ns.DISPLAY .. ": " .. tostring(text or ""))
 end
 
-function ns.PrintLoginHint()
-	ns.Print(ns.L.LOGIN_HINT or "Type |cffffffff/gst|r to open settings.")
+function ns.Print(text)
+	Chat(text)
+end
+
+local function JoinArgs(...)
+	local count = select("#", ...)
+	local parts = {}
+	for i = 1, count do
+		parts[i] = tostring(select(i, ...))
+	end
+	return table.concat(parts, " ")
 end
 
 -- Debug output; only when `/gst debug` is on.
 function ns.Debug(...)
 	if ns.db and ns.db.debug then
-		print(ns.PRINT_PREFIX, ...)
+		Chat(JoinArgs(...))
 	end
 end
 

@@ -10,18 +10,114 @@ local GetTime = GetTime
 
 -- Banner frames ----------------------------------------------------------------
 
--- Returns (frame, fontString): a centered, click-through banner.
+local BANNER_BACKDROP = {
+	bgFile = "Interface/Tooltips/UI-Tooltip-Background",
+	edgeFile = "Interface/Tooltips/UI-Tooltip-Border",
+	tile = true,
+	tileSize = 16,
+	edgeSize = 16,
+	insets = { left = 4, right = 4, top = 4, bottom = 4 },
+}
+
+-- Returns (frame, fontString): a banner. Click-through until unlock.
 local function CreateBanner()
-	local frame = CreateFrame("Frame", nil, UIParent)
+	local frame = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
 	frame:SetFrameStrata("HIGH")
-	frame:SetSize(700, 64)
-	frame:SetPoint("CENTER", UIParent, "CENTER", 0, 80)
+	frame:SetClampedToScreen(true)
+	frame:SetMovable(true)
 	frame:EnableMouse(false)
 	frame:Hide()
 	local text = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalHuge")
-	text:SetPoint("CENTER")
 	text:SetJustifyH("CENTER")
 	return frame, text
+end
+
+local function ApplyBannerFont(fs)
+	local huge = _G.GameFontNormalHuge
+	local file, _, flags
+	if huge and huge.GetFont then
+		file, _, flags = huge:GetFont()
+	end
+	local size = ns.ClampBannerFont(ns.db and ns.db.bannerFont)
+	if file then
+		fs:SetFont(file, size, flags)
+	elseif huge then
+		fs:SetFontObject(huge)
+	end
+end
+
+local function AnchorUnlocked()
+	local db = ns.db
+	return db and db.enabled and db.bannerUnlocked or false
+end
+
+local function ClampOffset(x, y)
+	local halfW = UIParent:GetWidth() / 2
+	local halfH = UIParent:GetHeight() / 2
+	local margin = 20
+	if x < -halfW + margin then
+		x = -halfW + margin
+	elseif x > halfW - margin then
+		x = halfW - margin
+	end
+	if y < -halfH + margin then
+		y = -halfH + margin
+	elseif y > halfH - margin then
+		y = halfH - margin
+	end
+	return x, y
+end
+
+local function BannerOffset()
+	local db = ns.db
+	local x = db and type(db.bannerX) == "number" and db.bannerX or 0
+	local y = db and type(db.bannerY) == "number" and db.bannerY or 80
+	return ClampOffset(x, y)
+end
+
+local function PlaceBanner(frame, extraY)
+	if frame.isMoving then
+		return
+	end
+	local x, y = BannerOffset()
+	frame:ClearAllPoints()
+	frame:SetPoint("CENTER", UIParent, "CENTER", x, y + (extraY or 0))
+end
+
+-- hint is the second line, passed only while this frame is the drag anchor.
+local function LayoutText(frame, text, hint)
+	ApplyBannerFont(text)
+	local width = text:GetStringWidth()
+	local height = text:GetStringHeight()
+	text:ClearAllPoints()
+	if hint then
+		ApplyBannerFont(hint)
+		hint:SetText(ns.L.BANNER_DRAG_HINT)
+		hint:Show()
+		hint:ClearAllPoints()
+		text:SetPoint("TOP", 0, -12)
+		hint:SetPoint("TOP", text, "BOTTOM", 0, -2)
+		local hintWidth = hint:GetStringWidth()
+		if hintWidth > width then
+			width = hintWidth
+		end
+		height = height + hint:GetStringHeight() + 2
+		frame:SetBackdrop(BANNER_BACKDROP)
+		frame:SetBackdropColor(0, 0, 0, 0.8)
+		frame:SetBackdropBorderColor(0.6, 0.6, 0.6, 1)
+		frame:EnableMouse(true)
+	else
+		text:SetPoint("CENTER")
+		frame:SetBackdrop(nil)
+		frame:EnableMouse(false)
+	end
+	if width < 1 then
+		width = 1
+	end
+	if height < 1 then
+		height = 1
+	end
+	frame:SetSize(width + 32, height + 24)
 end
 
 -- Tracking warning ---------------------------------------------------------------
@@ -40,10 +136,63 @@ local TRACKING_EVENTS = {
 	{ "UNIT_AURA", "player" },
 }
 
-local function EnsureWarningFrame()
-	if not warningFrame then
-		warningFrame, warningText = CreateBanner()
+local warningHint
+local trainFrame
+local trainText
+local PlaceTrain
+
+local function RepositionTrain()
+	if PlaceTrain and trainFrame and trainFrame:IsShown() then
+		PlaceTrain()
 	end
+end
+
+local function SaveBannerPosition(frame)
+	frame:StopMovingOrSizing()
+	local x, y = frame:GetCenter()
+	local px, py = UIParent:GetCenter()
+	if not x or not px then
+		frame.isMoving = nil
+		PlaceBanner(frame, 0)
+		return
+	end
+	local scale = frame:GetEffectiveScale() / UIParent:GetEffectiveScale()
+	x, y = ClampOffset((x - px) * scale, (y - py) * scale)
+	ns.db.bannerX = x
+	ns.db.bannerY = y
+	frame.isMoving = nil
+	PlaceBanner(frame, 0)
+	RepositionTrain()
+end
+
+local function OnAnchorMouseDown(self, button)
+	if button == "LeftButton" then
+		self.isMoving = true
+		self:StartMoving()
+	elseif button == "RightButton" then
+		if self.isMoving then
+			SaveBannerPosition(self)
+		end
+		ns.LockBanner()
+	end
+end
+
+local function OnAnchorMouseUp(self)
+	if self.isMoving then
+		SaveBannerPosition(self)
+	end
+end
+
+local function EnsureWarningFrame()
+	if warningFrame then
+		return
+	end
+	warningFrame, warningText = CreateBanner()
+	warningHint = warningFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+	warningHint:SetJustifyH("CENTER")
+	warningHint:Hide()
+	warningFrame:SetScript("OnMouseDown", OnAnchorMouseDown)
+	warningFrame:SetScript("OnMouseUp", OnAnchorMouseUp)
 end
 
 -- Tracking state comes from the minimap tracking list only (COMPAT-002).
@@ -85,14 +234,36 @@ local function DebugTrackingChange(what)
 	ns.Debug("tracking warning", what, "after", trackingTrigger or "watchdog/other")
 end
 
+local function ShowAnchor()
+	EnsureWarningFrame()
+	local message = lastWarningKey or ns.L.TRACKING_OFF_BOTH
+	warningText:SetText(message)
+	LayoutText(warningFrame, warningText, warningHint)
+	PlaceBanner(warningFrame, 0)
+	warningFrame:Show()
+	RepositionTrain()
+end
+
 local function HideWarning()
+	local wasShown = warningFrame and warningFrame:IsShown()
 	lastWarningKey = nil
 	warningElapsed = 0
-	if warningFrame and warningFrame:IsShown() then
+	if warningFrame then
+		warningFrame:SetScript("OnUpdate", nil)
+	end
+	if AnchorUnlocked() then
+		ShowAnchor()
+		return
+	end
+	if wasShown then
 		DebugTrackingChange("hidden")
 	end
 	if warningFrame then
-		warningFrame:SetScript("OnUpdate", nil)
+		if warningHint then
+			warningHint:Hide()
+		end
+		warningFrame:SetBackdrop(nil)
+		warningFrame:EnableMouse(false)
 		warningFrame:Hide()
 	end
 end
@@ -111,12 +282,64 @@ local function ShowWarning(message)
 	if warningText:GetText() ~= message then
 		warningText:SetText(message)
 	end
+	local hint = nil
+	if AnchorUnlocked() then
+		hint = warningHint
+	elseif warningHint then
+		warningHint:Hide()
+	end
+	LayoutText(warningFrame, warningText, hint)
+	PlaceBanner(warningFrame, 0)
 	warningElapsed = 0
 	warningFrame:SetScript("OnUpdate", WarningWatchdogOnUpdate)
 	if not warningFrame:IsShown() then
 		DebugTrackingChange("shown")
 	end
 	warningFrame:Show()
+	RepositionTrain()
+end
+
+function ns.ApplyBannerLayout()
+	local db = ns.db
+	if not db then
+		return
+	end
+	if warningFrame and warningFrame.isMoving and not AnchorUnlocked() then
+		SaveBannerPosition(warningFrame)
+	end
+	if trainFrame and trainText and trainText:GetText() and trainText:GetText() ~= "" then
+		LayoutText(trainFrame, trainText, nil)
+		RepositionTrain()
+	end
+	if AnchorUnlocked() then
+		ShowAnchor()
+		return
+	end
+	if not warningFrame then
+		return
+	end
+	if lastWarningKey and db.enabled and db.warnTracking then
+		ShowWarning(lastWarningKey)
+		return
+	end
+	if warningHint then
+		warningHint:Hide()
+	end
+	warningFrame:SetBackdrop(nil)
+	warningFrame:EnableMouse(false)
+	warningFrame:Hide()
+end
+
+function ns.LockBanner()
+	local setting = ns.bannerUnlockSetting
+	if setting and setting:GetValue() then
+		setting:SetValue(false)
+		return
+	end
+	if ns.db then
+		ns.db.bannerUnlocked = false
+	end
+	ns.ApplyBannerLayout()
 end
 
 -- Tracking events are registered only while the warning feature can do
@@ -215,8 +438,6 @@ end
 
 local TRAIN_SECONDS = 4
 local TRAIN_COOLDOWN = 30
-local trainFrame
-local trainText
 local trainTimer
 local lastTrainWarn = {}
 
@@ -224,6 +445,14 @@ local function EnsureTrainFrame()
 	if not trainFrame then
 		trainFrame, trainText = CreateBanner()
 	end
+end
+
+PlaceTrain = function()
+	local extra = 0
+	if warningFrame and warningFrame:IsShown() then
+		extra = (warningFrame:GetHeight() + trainFrame:GetHeight()) / 2 + 4
+	end
+	PlaceBanner(trainFrame, extra)
 end
 
 local function OnTrainTimer()
@@ -245,15 +474,11 @@ end
 
 local function ShowTrainWarning(message)
 	EnsureTrainFrame()
-	local y = 80
-	if warningFrame and warningFrame:IsShown() then
-		y = 140
-	end
-	trainFrame:ClearAllPoints()
-	trainFrame:SetPoint("CENTER", UIParent, "CENTER", 0, y)
 	if trainText:GetText() ~= message then
 		trainText:SetText(message)
 	end
+	LayoutText(trainFrame, trainText, nil)
+	PlaceTrain()
 	trainFrame:Show()
 	if trainTimer then
 		trainTimer:Cancel()

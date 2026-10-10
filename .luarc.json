@@ -18,6 +18,7 @@
   ],
   "workspace.ignoreDir": [
     ".release",
+    "assets",
     "tests"
   ],
   "workspace.checkThirdParty": false,
