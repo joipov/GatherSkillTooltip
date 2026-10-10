@@ -17,7 +17,7 @@
 ## OptionalDeps: LibDataBroker-1.1, LibDBIcon-1.0
 ## IconTexture: Interface\Icons\INV_Misc_Flower_02
 ## AddonCompartmentFunc: GatherSkillTooltip_OnAddonCompartmentClick
-## X-License: All Rights Reserved
+## X-License: MIT
 ## X-Website: https://github.com/joipov/GatherSkillTooltip
 ## AllowLoadGameType: camelot
 
