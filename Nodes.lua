@@ -294,11 +294,13 @@ function ns.LearnCustomNode(name, prof, skill)
 	if existing and type(existing.orange) == "number" and existing.orange < orange then
 		orange = existing.orange
 	end
+	local yellow = orange + 25
+	local grey = orange + 100
 	local entry = {
 		orange = orange,
-		yellow = orange + 25,
-		green = orange + 50,
-		grey = orange + 100,
+		yellow = yellow,
+		green = ns.GreenSkill(yellow, grey),
+		grey = grey,
 		prof = prof,
 		key = name,
 	}
