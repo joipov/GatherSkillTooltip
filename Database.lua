@@ -14,7 +14,7 @@ local defaults = {
 	learnChat = false,
 	warnTracking = true,
 	warnTrain = true,
-	showMinimapButton = false,
+	showMinimapButton = true,
 	minimapAngle = 200,
 	bannerFont = 20,
 	bannerX = 0,
@@ -26,7 +26,7 @@ local defaults = {
 ns.defaults = defaults
 
 -- Bump when a one-time migration is added to MigrateDB.
-local DB_VERSION = 4
+local DB_VERSION = 5
 
 local BANNER_FONT_MIN = 10
 local BANNER_FONT_MAX = 32
@@ -179,6 +179,11 @@ local function MigrateDB(db)
 			db.bannerFont = 12
 		end
 		db.bannerSmall = nil
+	end
+	if version < 5 then
+		-- The button used to default off, and that false was written into
+		-- saved variables. Turn it on once. A later choice stays put.
+		db.showMinimapButton = true
 	end
 	db.version = DB_VERSION
 end
