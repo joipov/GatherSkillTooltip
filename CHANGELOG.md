@@ -8,6 +8,10 @@ The reminder text size is a slider.
 
 - **Text size** runs from 10 to 32 for the tracking warning and the trainer reminder. 20 is the large size it used before.
 
+### Changed
+
+- The addon list groups this under Joipov Tools. The list name has no Joipov prefix.
+
 ## 2.0.3
 
 The reminder can be moved, and the addon loads on Forever again.
