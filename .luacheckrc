@@ -49,6 +49,7 @@ read_globals = {
 	"canaccesstable",
 
 	-- Namespaces
+	"C_AddOns",
 	"C_Minimap",
 	"C_Spell",
 	"C_Timer",

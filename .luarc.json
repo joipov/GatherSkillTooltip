@@ -23,6 +23,7 @@
   ],
   "workspace.checkThirdParty": false,
   "diagnostics.globals": [
+    "C_AddOns",
     "GatherSkillTooltipDB",
     "GatherSkillTooltip_OnAddonCompartmentClick",
     "GatherSkillTooltip_OnAddonCompartmentEnter",
