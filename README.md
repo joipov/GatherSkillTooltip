@@ -1,4 +1,4 @@
-# GatherSkillTooltip
+# Gather Skill Tooltip
 
 Shows your gathering skill and the skill a node requires when you hover a
 herb or ore (in the world or on a minimap pin), and puts your Skinning skill

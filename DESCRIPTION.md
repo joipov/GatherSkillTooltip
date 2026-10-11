@@ -1,4 +1,4 @@
-# GatherSkillTooltip
+# Gather Skill Tooltip
 
 For World of Warcraft: Forever (Classic Plus).
 
@@ -14,7 +14,7 @@ Your skill comes from the game, including gear bonuses. Herbs and ores start fro
 
 A finished gather or skin corrects that guess for that node, or that skinning level. A skill point counts as a hit. No point counts as a miss. Misses at your current cap are ignored. A point below the listed requirement lowers the number shown. Further tries recolor toward how often you actually gain a point. A long run of misses turns it grey. Something you can still gain a point on stays green.
 
-Names, settings, and the skinning label follow the client language: English, German, French, Spanish, Italian, Portuguese, Korean, and both Chinese clients. A German client keeps **Maguskönigskraut (42/50)**. Not Russian. The addon name stays GatherSkillTooltip, and `/gst` stays `/gst`.
+Names, settings, and the skinning label follow the client language: English, German, French, Spanish, Italian, Portuguese, Korean, and both Chinese clients. A German client keeps **Maguskönigskraut (42/50)**. Not Russian. The addon name stays Gather Skill Tooltip, and `/gst` stays `/gst`.
 
 Forever allows one tracking spell at a time. If you know Herbalism or Mining and both Find Herbs and Find Minerals are off, a warning stays on screen until you turn one on, or turn the warning off. It starts in the middle. Text size and Unlock position shrink it and move it. One spell is enough if you have both professions. Skinning never raises it.
 
@@ -22,7 +22,7 @@ Forever allows one tracking spell at a time. If you know Herbalism or Mining and
 
 Open with `/gst`, `/gatherskilltooltip`, the minimap button, or Esc > Options > AddOns > Gather Skill Tooltip. Text follows the client language. Everything defaults to on except where a line says off.
 
-*   **Enable GatherSkillTooltip** — master switch. Off means no tooltip changes and no warnings. What was learned is kept.
+*   **Enable Gather Skill Tooltip** — master switch. Off means no tooltip changes and no warnings. What was learned is kept.
 *   **Herbalism / Mining / Skinning** — which professions get the extra tooltip.
 *   **Show my skill** — the first number, 42 in Mageroyal (42/50).
 *   **Show required skill** — the second number, 50 in that example. Both, one, or neither. Same switches for skinning. A learned lower requirement replaces the table number.
