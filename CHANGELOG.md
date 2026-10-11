@@ -1,6 +1,6 @@
 # Changelog
 
-## 2.1.0
+## 2.1.1
 
 ### Changed
 
@@ -11,6 +11,7 @@
 
 - A spellcast id that the client hides is no longer compared, which could error on a secret value.
 - A unit tooltip's data table is checked before it is read.
+- The learned-node chat line and the node names in it use the client's language.
 - Locking the reminder no longer shifts it. The drag box sits around the message, and the trainer line stacks from the warning's real top.
 - Kingsblood stays yellow through 189 and turns green at 190. The band is
   125 / 150 / 190 / 225. At 189 the tooltip was calling it green while it is

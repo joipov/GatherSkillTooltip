@@ -26,6 +26,7 @@ ns.RegisterLocale({
 	LEARNED_SKIN_YES = "배움: %s 무두질 가능.",
 	LEARNED_SKIN_NO = "배움: %s 무두질 불가.",
 	LEARNED_COLOR = "배움: %s, %s, 숙련도 %d.",
+	LEARNED_NODE = "학습함: %s은(는) 약 %d이(가) 필요합니다.",
 	LEARNED_LEVEL = "%d 레벨",
 	COLOR_RED = "빨강",
 	COLOR_ORANGE = "주황",

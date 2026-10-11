@@ -26,6 +26,7 @@ ns.RegisterLocale({
 	LEARNED_SKIN_YES = "已學會：%s可以剝皮。",
 	LEARNED_SKIN_NO = "已學會：%s不能剝皮。",
 	LEARNED_COLOR = "已學會：%s為%s（%d）。",
+	LEARNED_NODE = "已學會：%s 需要大約 %d。",
 	LEARNED_LEVEL = "%d級",
 	COLOR_RED = "紅色",
 	COLOR_ORANGE = "橙色",

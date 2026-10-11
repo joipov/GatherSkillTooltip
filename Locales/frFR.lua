@@ -26,6 +26,7 @@ ns.RegisterLocale({
 	LEARNED_SKIN_YES = "Appris : %s peut être dépecé.",
 	LEARNED_SKIN_NO = "Appris : %s ne peut pas être dépecé.",
 	LEARNED_COLOR = "Appris : %s est %s à %d.",
+	LEARNED_NODE = "Appris : %s demande environ %d.",
 	LEARNED_LEVEL = "niveau %d",
 	COLOR_RED = "rouge",
 	COLOR_ORANGE = "orange",
