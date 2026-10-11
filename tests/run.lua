@@ -126,7 +126,7 @@ test("NODE_BY_KEY maps shared nodes to one key", function()
 	local copper = ns.NODES["Copper Vein"]
 	eq(ns.NODES["Poor Copper Vein"], copper, "shared table")
 	eq(ns.NODES["Weak Copper Vein"], copper, "shared table")
-	eq(copper.green, 62, "copper turns green at 62")
+	eq(copper.green, 65, "copper turns green at 65")
 	eq(copper.key, "Copper Vein", "lexically smallest name wins")
 	eq(ns.NODE_BY_KEY["Copper Vein"], copper)
 	eq(ns.NODE_BY_KEY["Poor Copper Vein"], nil)
@@ -180,20 +180,21 @@ test("ExactNode: plain, decorated, alias and unknown", function()
 end)
 
 test("DifficultyColor thresholds", function()
-	local node = ns.NODES["Earthroot"] -- 15/40/77/115
+	local node = ns.NODES["Earthroot"] -- 15/40/80/115
 	eq(ns.DifficultyColor(14, node), P.red)
 	eq(ns.DifficultyColor(15, node), P.orange)
 	eq(ns.DifficultyColor(39, node), P.orange)
 	eq(ns.DifficultyColor(40, node), P.yellow)
 	eq(ns.DifficultyColor(65, node), P.yellow)
-	eq(ns.DifficultyColor(77, node), P.green)
+	eq(ns.DifficultyColor(79, node), P.yellow)
+	eq(ns.DifficultyColor(80, node), P.green)
 	eq(ns.DifficultyColor(115, node), P.grey)
 	eq(ns.DifficultyColor(10, node, 5), P.orange, "effective orange overrides table")
 	eq(ns.DifficultyColor(10, { orange = 1 }), nil, "incomplete band")
-	local kingsblood = ns.NODES["Kingsblood"] -- 125/150/187/225
+	local kingsblood = ns.NODES["Kingsblood"] -- 125/150/190/225
 	eq(ns.DifficultyColor(176, kingsblood), P.yellow)
-	eq(ns.DifficultyColor(186, kingsblood), P.yellow)
-	eq(ns.DifficultyColor(187, kingsblood), P.green)
+	eq(ns.DifficultyColor(189, kingsblood), P.yellow)
+	eq(ns.DifficultyColor(190, kingsblood), P.green)
 end)
 
 test("ColorFromRate thresholds", function()
@@ -221,7 +222,7 @@ end)
 
 test("NoteGatherResult and ObservedColor", function()
 	local db = freshDB()
-	local node = ns.NODES["Copper Vein"] -- 1/25/62/100
+	local node = ns.NODES["Copper Vein"] -- 1/25/65/100
 	local key = node.key
 	eq(ns.ObservedColor(100, node, 1, key), P.grey, "table color without observations")
 	-- 20 misses at 100 with no gain: grey (already grey here); at 70 it flips green -> grey.
@@ -256,7 +257,7 @@ end)
 
 test("SkinningBand is cached and carries the learned-data key", function()
 	local a = ns.SkinningBand(25)
-	eq(a.orange, 125); eq(a.yellow, 150); eq(a.green, 187); eq(a.grey, 225)
+	eq(a.orange, 125); eq(a.yellow, 150); eq(a.green, 190); eq(a.grey, 225)
 	eq(a.prof, "skin"); eq(a.key, "skin:25")
 	eq(ns.SkinningBand(25), a, "same table on second call")
 end)
@@ -273,7 +274,7 @@ end)
 
 test("LoadDB applies defaults and versions a fresh table", function()
 	local db = ns.LoadDB(nil)
-	eq(db.version, 6)
+	eq(db.version, 7)
 	eq(db.enabled, true)
 	eq(db.learnChat, false)
 	eq(db.minimapAngle, 200)
@@ -299,7 +300,7 @@ test("LoadDB migrates 1.x data once", function()
 	}
 	local db = ns.LoadDB(saved)
 	eq(db, saved, "same table")
-	eq(db.version, 6)
+	eq(db.version, 7)
 	eq(db.minimapAngle, 200, "old default angle moved")
 	eq(db.minimapIcon.minimapPos, 200, "old default band re-aligned")
 	eq(db.minimapIcon.hide, nil, "non-boolean hide dropped")
@@ -355,7 +356,7 @@ test("LoadDB migrates small text and clamps banner font", function()
 	local small = ns.LoadDB({ version = 3, bannerSmall = true, bannerFont = 20 })
 	eq(small.bannerFont, 12)
 	eq(small.bannerSmall, nil)
-	eq(small.version, 6)
+	eq(small.version, 7)
 	ns.LoadDB(small)
 	eq(small.bannerFont, 12, "small text is not migrated twice")
 	local huge = ns.LoadDB({ bannerFont = 99 })
@@ -388,7 +389,7 @@ test("customNodes validate, merge, and never overwrite builtins", function()
 		},
 	})
 	eq(db.customNodes["Mystery Herb"].orange, 40)
-	eq(db.customNodes["Mystery Herb"].green, 102, "old orange+50 green moves to the midpoint")
+	eq(db.customNodes["Mystery Herb"].green, 105, "old orange+50 green moves to the 65 percent step")
 	eq(db.customNodes["Peacebloom"], nil, "builtin stripped from customNodes")
 	eq(db.customNodes.bad, nil)
 	eq(db.customNodes["Broken"], nil)
@@ -410,10 +411,23 @@ test("customNodes validate, merge, and never overwrite builtins", function()
 	eq(ns.LearnCustomNode("Beta Ore", "mine", 50), true)
 	eq(ns.db.customNodes["Beta Ore"].orange, 50, "lower orange kept")
 	eq(ns.LOOKUP["Beta Ore"].orange, 50)
-	eq(ns.db.customNodes["Beta Ore"].green, 112, "learned green is the midpoint")
+	eq(ns.db.customNodes["Beta Ore"].green, 115, "learned green is the 65 percent step")
 	eq(ns.LearnCustomNode("Peacebloom", "herb", 1), false)
 	eq(ns.db.customNodes["Peacebloom"], nil)
 	eq(ns.LOOKUP["Peacebloom"], ns.NODES["Peacebloom"])
+end)
+
+test("LoadDB moves a midpoint green to the 65 percent step", function()
+	local db = ns.LoadDB({
+		version = 6,
+		customNodes = {
+			["Midpoint Herb"] = { orange = 40, yellow = 65, green = 102, grey = 140, prof = "herb", key = "Midpoint Herb" },
+		},
+	})
+	eq(db.version, 7)
+	eq(db.customNodes["Midpoint Herb"].green, 105)
+	ns.LoadDB(db)
+	eq(db.customNodes["Midpoint Herb"].green, 105, "not migrated twice")
 end)
 
 test("NoteGatherResult keeps a lowered orange after a higher gain", function()
@@ -439,13 +453,13 @@ test("v2 gainedAt below table orange seeds orangeSeen once", function()
 		},
 	}
 	local db = ns.LoadDB(saved)
-	eq(db.version, 6)
+	eq(db.version, 7)
 	eq(db.gather["Tin Vein"].orangeSeen, 60)
 	eq(db.gather["Copper Vein"].orangeSeen, nil, "gainedAt above the table orange is not a floor")
 	db.gather["Tin Vein"].orangeSeen = nil
 	db.gather["Tin Vein"].gainedAt = 40
 	ns.LoadDB(db)
-	eq(db.version, 6)
+	eq(db.version, 7)
 	eq(db.gather["Tin Vein"].orangeSeen, nil, "a later load does not seed again")
 end)
 
