@@ -20,6 +20,8 @@
 ## AddonCompartmentFuncOnEnter: GatherSkillTooltip_OnAddonCompartmentEnter
 ## AddonCompartmentFuncOnLeave: GatherSkillTooltip_OnAddonCompartmentLeave
 ## X-License: MIT
+## X-Curse-Project-ID: 1705965
+## X-Wago-ID: rNkgyeNa
 ## X-Website: https://github.com/joipov/GatherSkillTooltip
 ## AllowLoadGameType: camelot
 
