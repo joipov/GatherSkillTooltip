@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.1.2
+
+The login line shows the addon name and version. The Joipov name color is a brighter violet.
+
+### Changed
+
+- The login line reads Joipov <name> (v<version>). The name and version come from the TOC, so they never drift. The version is a different color.
+- Joipov is now a saturated violet.
+
 ## 2.1.1
 
 ### Changed

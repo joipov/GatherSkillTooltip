@@ -55,7 +55,7 @@ end
 
 function handlers.PLAYER_LOGIN()
 	ns.CreateMinimapButton()
-	ns.Print("Type |cffffffff/gst|r to open settings.")
+	ns.Welcome()
 end
 
 function handlers.PLAYER_ENTERING_WORLD()

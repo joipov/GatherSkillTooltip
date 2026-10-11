@@ -1,4 +1,4 @@
-local _, ns = ...
+local ADDON_NAME, ns = ...
 
 -- Shared helpers: secret-value guards, text stripping, colors, chat output
 -- and tooltip font-string access. No game state lives here.
@@ -9,11 +9,18 @@ local issecrettable = issecrettable
 local canaccesstable = canaccesstable
 
 local function Chat(text)
-	print("|cffc4b5fdJoipov|r " .. ns.DISPLAY .. ": " .. tostring(text or ""))
+	print("|cff8b5cf6Joipov|r " .. ns.DISPLAY .. ": " .. tostring(text or ""))
 end
 
 function ns.Print(text)
 	Chat(text)
+end
+
+-- Login line. Name and version come from the TOC, so they never drift.
+function ns.Welcome()
+	local title = C_AddOns.GetAddOnMetadata(ADDON_NAME, "Title") or ns.DISPLAY
+	local version = C_AddOns.GetAddOnMetadata(ADDON_NAME, "Version") or "?"
+	print(string.format("|cff8b5cf6Joipov|r %s (|cff22d3eev%s|r). Type |cffffffff/gst|r to open settings.", title, version))
 end
 
 local function JoinArgs(...)
