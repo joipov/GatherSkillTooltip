@@ -66,9 +66,28 @@ function Settings.RegisterAddOnSetting(category, variable, variableKey, variable
 ---@return SettingsCheckboxInitializer
 function Settings.CreateCheckbox(category, setting, tooltip) end
 
+---@param min number
+---@param max number
+---@param step number
+---@return table
+function Settings.CreateSliderOptions(min, max, step) end
+
+---@param category SettingsCategory
+---@param setting AddOnSetting
+---@param options table
+---@param tooltip string?
+---@return table
+function Settings.CreateSlider(category, setting, options, tooltip) end
+
 ---@param categoryID number
 function Settings.OpenToCategory(categoryID) end
 
 ---@param name string
 ---@return table
 function CreateSettingsListSectionHeaderInitializer(name) end
+
+-- Optional Blizzard frames are read through `_G.<name>` (for example the
+-- client's own "Skinnable" global string). LuaLS has the Lua builtins disabled,
+-- so `_G` has no index type and such lookups would be "undefined-field".
+---@type table<string, any>
+_G = _G

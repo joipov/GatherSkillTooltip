@@ -33,6 +33,8 @@ files["tests/"] = {
 globals = {
 	"GatherSkillTooltipDB",
 	"GatherSkillTooltip_OnAddonCompartmentClick",
+	"GatherSkillTooltip_OnAddonCompartmentEnter",
+	"GatherSkillTooltip_OnAddonCompartmentLeave",
 	"SLASH_GATHERSKILLTOOLTIP1",
 	"SLASH_GATHERSKILLTOOLTIP2",
 	SlashCmdList = { fields = { "GATHERSKILLTOOLTIP" } },
