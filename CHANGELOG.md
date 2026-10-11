@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- Locking the reminder no longer shifts it. The drag box sits around the message, and the trainer line stacks from the warning's real top.
+
 ## 2.0.7
 
 Herb and ore difficulty turns green later, matching the client.

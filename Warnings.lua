@@ -80,16 +80,22 @@ local function PlaceBanner(frame, extraY)
 		return
 	end
 	local x, y = BannerOffset()
+	local scale = frame:GetEffectiveScale() / UIParent:GetEffectiveScale()
+	local dy = (frame.messageDy or 0) * scale
 	frame:ClearAllPoints()
-	frame:SetPoint("CENTER", UIParent, "CENTER", x, y + (extraY or 0))
+	frame:SetPoint("CENTER", UIParent, "CENTER", x, y - dy + (extraY or 0))
 end
 
 -- hint is the second line, passed only while this frame is the drag anchor.
+-- bannerX and bannerY are the message center. The drag box hangs around that
+-- point, so locking does not move the message.
 local function LayoutText(frame, text, hint)
 	ApplyBannerFont(text)
 	local width = text:GetStringWidth()
-	local height = text:GetStringHeight()
+	local textH = text:GetStringHeight()
+	local height = textH
 	text:ClearAllPoints()
+	frame.messageDy = 0
 	if hint then
 		ApplyBannerFont(hint)
 		hint:SetText(ns.L.BANNER_DRAG_HINT)
@@ -117,7 +123,11 @@ local function LayoutText(frame, text, hint)
 	if height < 1 then
 		height = 1
 	end
-	frame:SetSize(width + 32, height + 24)
+	local frameH = height + 24
+	if hint then
+		frame.messageDy = frameH / 2 - (12 + textH / 2)
+	end
+	frame:SetSize(width + 32, frameH)
 end
 
 -- Tracking warning ---------------------------------------------------------------
@@ -157,6 +167,7 @@ local function SaveBannerPosition(frame)
 		return
 	end
 	local scale = frame:GetEffectiveScale() / UIParent:GetEffectiveScale()
+	y = y + (frame.messageDy or 0)
 	x, y = ClampOffset((x - px) * scale, (y - py) * scale)
 	ns.db.bannerX = x
 	ns.db.bannerY = y
@@ -448,11 +459,22 @@ local function EnsureTrainFrame()
 end
 
 PlaceTrain = function()
-	local extra = 0
-	if warningFrame and warningFrame:IsShown() then
-		extra = (warningFrame:GetHeight() + trainFrame:GetHeight()) / 2 + 4
+	if not trainFrame or trainFrame.isMoving then
+		return
 	end
-	PlaceBanner(trainFrame, extra)
+	if warningFrame and warningFrame:IsShown() then
+		local top = warningFrame:GetTop()
+		local _, parentY = UIParent:GetCenter()
+		if top and parentY then
+			local scale = warningFrame:GetEffectiveScale() / UIParent:GetEffectiveScale()
+			local x = BannerOffset()
+			local y = (top - parentY) * scale + 4 + trainFrame:GetHeight() / 2
+			trainFrame:ClearAllPoints()
+			trainFrame:SetPoint("CENTER", UIParent, "CENTER", x, y)
+			return
+		end
+	end
+	PlaceBanner(trainFrame, 0)
 end
 
 local function OnTrainTimer()
