@@ -167,7 +167,7 @@ local function UnitFromTooltip(tooltip, data)
 	if type(unit) == "string" and not SecretBlocked(unit) then
 		return unit
 	end
-	if not data then
+	if not ns.CanIndex(data) then
 		return nil
 	end
 	local guid = data.guid

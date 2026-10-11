@@ -1,6 +1,6 @@
 -- luacheck configuration (TOOL-003), modeled on the BigWigs layout:
 -- Lua 5.1 semantics, an explicit list of WoW globals this addon reads, and
--- only the five intentional globals it writes. Anything else is an error.
+-- only the intentional globals it writes. Anything else is an error.
 std = "lua51"
 max_line_length = false
 self = false
@@ -58,7 +58,6 @@ read_globals = {
 	-- Functions
 	"CreateFrame",
 	"GetCursorPosition",
-	"GetLocale",
 	"GetNumLootItems",
 	"GetProfessionInfo",
 	"GetProfessions",
