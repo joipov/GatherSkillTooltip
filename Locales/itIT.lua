@@ -26,6 +26,7 @@ ns.RegisterLocale({
 	LEARNED_SKIN_YES = "Imparato: %s si può scuoiare.",
 	LEARNED_SKIN_NO = "Imparato: %s non si può scuoiare.",
 	LEARNED_COLOR = "Imparato: %s è %s a %d.",
+	LEARNED_NODE = "Imparato: %s richiede circa %d.",
 	LEARNED_LEVEL = "livello %d",
 	COLOR_RED = "rosso",
 	COLOR_ORANGE = "arancione",

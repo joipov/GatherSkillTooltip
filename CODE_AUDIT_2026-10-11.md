@@ -14,10 +14,10 @@ Scope: every `.lua`, the `.toc`, `tests/run.lua`, and the docs. `assets/`, `.rel
 `Skinning.lua` `UnitFromTooltip` read `data.guid` after only a nil check. **Fixed** — `ns.CanIndex(data)` first.
 
 ### B3 — `LEARNED_NODE` missing from the non-English locales
-**Not changed** — the chat line falls back to English. Adding translations without a native check would be worse than the fallback; revisit when the locales are next edited.
+**Fixed** — the key was added to all nine non-English locales. The CJK strings are machine-written and worth a native check.
 
-### B4 — Learned custom-node names show in English
-`GatherSubject` returns the English key. **Not changed** — cosmetic; the learned data is correct.
+### B4 — Node names showed in English
+`GatherSubject` returned the English key for the learn chat line. **Fixed** — a reverse name map (`ns.NODE_DISPLAY`) built from the locale aliases gives the client's language. Custom nodes are still not announced (they are not in `NODE_BY_KEY`); their data is recorded, but a color-change line for them is left for a future pass.
 
 ### B5..B11 — Learning, skinning, and threshold edge cases
 Reviewed. Left as documented behavior; no crash or data loss. `lastSkinLevel`, the loot fallback, and the cast-start skill refresh are unchanged.

@@ -26,6 +26,7 @@ ns.RegisterLocale({
 	LEARNED_SKIN_YES = "Gelernt: %s kann gehäutet werden.",
 	LEARNED_SKIN_NO = "Gelernt: %s kann nicht gehäutet werden.",
 	LEARNED_COLOR = "Gelernt: %s ist %s bei Fertigkeit %d.",
+	LEARNED_NODE = "Gelernt: %s erfordert etwa %d.",
 	LEARNED_LEVEL = "Stufe %d",
 	COLOR_RED = "rot",
 	COLOR_ORANGE = "orange",

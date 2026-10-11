@@ -66,10 +66,14 @@ ns.L = {
 -- Tooltip name -> node (ARCH-004): English names from ns.NODES; each
 -- locale file adds its aliases. A separate table, ns.NODES is not mutated.
 local lookup = {}
+-- Node key -> the name to show, in the client's language.
+local display = {}
 for name, node in pairs(ns.NODES) do
 	lookup[name] = node
+	display[name] = name
 end
 ns.LOOKUP = lookup
+ns.NODE_DISPLAY = display
 
 -- Called by Locales/<locale>.lua, which the TOC loads only on that client
 -- locale ([AllowLoadTextLocale], ARCH-005/PERF-005): overlays UI strings and
@@ -84,6 +88,7 @@ function ns.RegisterLocale(strings, aliases)
 		local node = nodes[enName]
 		if node then
 			lookup[locName] = node
+			display[enName] = locName
 		end
 	end
 end

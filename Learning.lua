@@ -143,7 +143,8 @@ local function GatherSubject(key)
 	if not node then
 		return nil
 	end
-	return key, node
+	local display = ns.NODE_DISPLAY and ns.NODE_DISPLAY[key]
+	return display or key, node
 end
 
 -- Records the result and announces a color change when learnChat is on.
