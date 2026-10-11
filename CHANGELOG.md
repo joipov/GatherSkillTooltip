@@ -5,6 +5,13 @@
 ### Fixed
 
 - Locking the reminder no longer shifts it. The drag box sits around the message, and the trainer line stacks from the warning's real top.
+- Kingsblood stays yellow through 189 and turns green at 190. The band is
+  125 / 150 / 190 / 225. At 189 the tooltip was calling it green while it is
+  still yellow.
+- Every other herb and ore uses that same green step, 65 percent of the way
+  from the skill just below yellow to grey. Copper Vein turns green at 65.
+- Skinning and nodes learned in play use that step. Saves that still have the
+  old midpoint green are updated once.
 
 ## 2.0.7
 

@@ -43,60 +43,63 @@ ns.SKIN_TYPE_IDS = {
 	[2] = true, -- Dragonkin
 }
 
-local function Node(orange, yellow, green, grey, prof)
+-- Green is 65% of the way from the nominal orange (yellow - 25) to grey.
+-- On the usual 100-point span that is 40 above yellow. Kingsblood (150/225)
+-- stays yellow through 189 and turns green at 190. Flooring the midpoint of
+-- yellow and grey was 3 points early.
+function ns.GreenSkill(yellow, grey)
+	local orange = yellow - 25
+	return orange + math.floor((grey - orange) * 65 / 100)
+end
+
+local function Node(orange, yellow, grey, prof)
 	return {
 		orange = orange,
 		yellow = yellow,
-		green = green,
+		green = ns.GreenSkill(yellow, grey),
 		grey = grey,
 		prof = prof,
 	}
 end
 
--- Green is the integer midpoint of yellow and grey. The client keeps a node
--- yellow below that skill (the trade-skill color rule).
-function ns.GreenSkill(yellow, grey)
-	return math.floor((yellow + grey) / 2)
-end
-
 local herb = "herb"
 local mine = "mine"
-local copper = Node(1, 25, 62, 100, mine)
+local copper = Node(1, 25, 100, mine)
 -- Forever starter herbs share Classic bands (Lock orange 1).
-local peacebloom = Node(1, 25, 62, 100, herb)
-local silverleaf = Node(1, 25, 62, 100, herb)
+local peacebloom = Node(1, 25, 100, herb)
+local silverleaf = Node(1, 25, 100, herb)
 
 ns.NODES = {
 	["Peacebloom"] = peacebloom,
 	["Wilted Peacebloom"] = peacebloom,
 	["Silverleaf"] = silverleaf,
 	["Stunted Silverleaf"] = silverleaf,
-	["Earthroot"] = Node(15, 40, 77, 115, herb),
-	["Mageroyal"] = Node(50, 75, 112, 150, herb),
-	["Briarthorn"] = Node(70, 95, 132, 170, herb),
-	["Stranglekelp"] = Node(85, 110, 147, 185, herb),
-	["Bruiseweed"] = Node(100, 125, 162, 200, herb),
-	["Wild Steelbloom"] = Node(115, 140, 177, 215, herb),
-	["Grave Moss"] = Node(120, 145, 182, 220, herb),
-	["Kingsblood"] = Node(125, 150, 187, 225, herb),
-	["Liferoot"] = Node(150, 175, 212, 250, herb),
-	["Fadeleaf"] = Node(160, 185, 222, 260, herb),
-	["Goldthorn"] = Node(170, 195, 232, 270, herb),
-	["Khadgar's Whisker"] = Node(185, 210, 247, 285, herb),
-	["Wintersbite"] = Node(195, 220, 257, 295, herb),
-	["Firebloom"] = Node(205, 230, 267, 305, herb),
-	["Purple Lotus"] = Node(210, 235, 272, 310, herb),
-	["Arthas' Tears"] = Node(220, 245, 282, 320, herb),
-	["Sungrass"] = Node(230, 255, 292, 330, herb),
-	["Blindweed"] = Node(235, 260, 297, 335, herb),
-	["Ghost Mushroom"] = Node(245, 270, 307, 345, herb),
-	["Gromsblood"] = Node(250, 275, 312, 350, herb),
-	["Golden Sansam"] = Node(260, 285, 322, 360, herb),
-	["Dreamfoil"] = Node(270, 295, 332, 370, herb),
-	["Mountain Silversage"] = Node(280, 305, 342, 380, herb),
-	["Plaguebloom"] = Node(285, 310, 347, 385, herb),
-	["Icecap"] = Node(290, 315, 352, 390, herb),
-	["Black Lotus"] = Node(300, 325, 362, 400, herb),
+	["Earthroot"] = Node(15, 40, 115, herb),
+	["Mageroyal"] = Node(50, 75, 150, herb),
+	["Briarthorn"] = Node(70, 95, 170, herb),
+	["Stranglekelp"] = Node(85, 110, 185, herb),
+	["Bruiseweed"] = Node(100, 125, 200, herb),
+	["Wild Steelbloom"] = Node(115, 140, 215, herb),
+	["Grave Moss"] = Node(120, 145, 220, herb),
+	["Kingsblood"] = Node(125, 150, 225, herb),
+	["Liferoot"] = Node(150, 175, 250, herb),
+	["Fadeleaf"] = Node(160, 185, 260, herb),
+	["Goldthorn"] = Node(170, 195, 270, herb),
+	["Khadgar's Whisker"] = Node(185, 210, 285, herb),
+	["Wintersbite"] = Node(195, 220, 295, herb),
+	["Firebloom"] = Node(205, 230, 305, herb),
+	["Purple Lotus"] = Node(210, 235, 310, herb),
+	["Arthas' Tears"] = Node(220, 245, 320, herb),
+	["Sungrass"] = Node(230, 255, 330, herb),
+	["Blindweed"] = Node(235, 260, 335, herb),
+	["Ghost Mushroom"] = Node(245, 270, 345, herb),
+	["Gromsblood"] = Node(250, 275, 350, herb),
+	["Golden Sansam"] = Node(260, 285, 360, herb),
+	["Dreamfoil"] = Node(270, 295, 370, herb),
+	["Mountain Silversage"] = Node(280, 305, 380, herb),
+	["Plaguebloom"] = Node(285, 310, 385, herb),
+	["Icecap"] = Node(290, 315, 390, herb),
+	["Black Lotus"] = Node(300, 325, 400, herb),
 
 	["Copper Vein"] = copper,
 	["Poor Copper Vein"] = copper,
@@ -104,28 +107,28 @@ ns.NODES = {
 	["Minor Copper Vein"] = copper,
 	["Lesser Copper Vein"] = copper,
 	["Small Copper Vein"] = copper,
-	["Tin Vein"] = Node(65, 90, 127, 165, mine),
-	["Silver Vein"] = Node(75, 100, 137, 175, mine),
-	["Iron Deposit"] = Node(125, 150, 187, 225, mine),
-	["Gold Vein"] = Node(155, 180, 217, 255, mine),
-	["Mithril Deposit"] = Node(175, 200, 237, 275, mine),
-	["Truesilver Deposit"] = Node(230, 255, 292, 330, mine),
-	["Dark Iron Deposit"] = Node(230, 255, 292, 330, mine),
-	["Small Thorium Vein"] = Node(245, 270, 307, 345, mine),
-	["Rich Thorium Vein"] = Node(275, 300, 337, 375, mine),
-	["Hakkari Thorium Vein"] = Node(275, 300, 337, 375, mine),
-	["Incendicite Mineral Vein"] = Node(65, 90, 127, 165, mine),
-	["Lesser Bloodstone Deposit"] = Node(75, 100, 137, 175, mine),
-	["Indurium Mineral Vein"] = Node(150, 175, 212, 250, mine),
-	["Ooze Covered Silver Vein"] = Node(75, 100, 137, 175, mine),
-	["Ooze Covered Gold Vein"] = Node(155, 180, 217, 255, mine),
-	["Ooze Covered Iron Deposit"] = Node(125, 150, 187, 225, mine),
-	["Ooze Covered Mithril Deposit"] = Node(175, 200, 237, 275, mine),
-	["Ooze Covered Truesilver Deposit"] = Node(230, 255, 292, 330, mine),
-	["Ooze Covered Thorium Vein"] = Node(245, 270, 307, 345, mine),
-	["Ooze Covered Rich Thorium Vein"] = Node(275, 300, 337, 375, mine),
-	["Small Obsidian Chunk"] = Node(305, 330, 367, 405, mine),
-	["Large Obsidian Chunk"] = Node(305, 330, 367, 405, mine),
+	["Tin Vein"] = Node(65, 90, 165, mine),
+	["Silver Vein"] = Node(75, 100, 175, mine),
+	["Iron Deposit"] = Node(125, 150, 225, mine),
+	["Gold Vein"] = Node(155, 180, 255, mine),
+	["Mithril Deposit"] = Node(175, 200, 275, mine),
+	["Truesilver Deposit"] = Node(230, 255, 330, mine),
+	["Dark Iron Deposit"] = Node(230, 255, 330, mine),
+	["Small Thorium Vein"] = Node(245, 270, 345, mine),
+	["Rich Thorium Vein"] = Node(275, 300, 375, mine),
+	["Hakkari Thorium Vein"] = Node(275, 300, 375, mine),
+	["Incendicite Mineral Vein"] = Node(65, 90, 165, mine),
+	["Lesser Bloodstone Deposit"] = Node(75, 100, 175, mine),
+	["Indurium Mineral Vein"] = Node(150, 175, 250, mine),
+	["Ooze Covered Silver Vein"] = Node(75, 100, 175, mine),
+	["Ooze Covered Gold Vein"] = Node(155, 180, 255, mine),
+	["Ooze Covered Iron Deposit"] = Node(125, 150, 225, mine),
+	["Ooze Covered Mithril Deposit"] = Node(175, 200, 275, mine),
+	["Ooze Covered Truesilver Deposit"] = Node(230, 255, 330, mine),
+	["Ooze Covered Thorium Vein"] = Node(245, 270, 345, mine),
+	["Ooze Covered Rich Thorium Vein"] = Node(275, 300, 375, mine),
+	["Small Obsidian Chunk"] = Node(305, 330, 405, mine),
+	["Large Obsidian Chunk"] = Node(305, 330, 405, mine),
 }
 
 -- Nodes sharing a table (copper variants) share one learned-data key: the
