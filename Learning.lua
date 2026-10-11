@@ -262,6 +262,9 @@ end
 
 -- UNIT_SPELLCAST_INTERRUPTED / _FAILED: drop an armed (not yet pending) watch.
 function ns.OnGatherCastStop(spellID)
+	if SecretBlocked(spellID) then
+		return
+	end
 	if gatherWatch and gatherWatch.spell == spellID and not gatherWatch.pending then
 		CancelGatherWatch()
 	end
@@ -272,6 +275,9 @@ end
 -- herb/ore is learned only from the name snapshotted at cast start, using
 -- that pre-cast skill (CQ-101, CQ-105).
 function ns.OnGatherCastSucceeded(spellID)
+	if SecretBlocked(spellID) then
+		return
+	end
 	local watch = gatherWatch
 	if not watch or watch.spell ~= spellID or watch.pending then
 		return

@@ -15,7 +15,6 @@ local defaults = {
 	warnTracking = true,
 	warnTrain = true,
 	showMinimapButton = true,
-	minimapAngle = 200,
 	bannerFont = 20,
 	bannerX = 0,
 	bannerY = 80,
@@ -24,10 +23,10 @@ local defaults = {
 
 -- Option keys only. Learned gather data is not in this table.
 ns.defaults = defaults
-ns.DB_DEFAULTS = defaults
 
 -- Bump when a one-time migration is added to MigrateDB.
-local DB_VERSION = 7
+local DB_VERSION = 8
+local MINIMAP_POS = 200
 
 local BANNER_FONT_MIN = 10
 local BANNER_FONT_MAX = 32
@@ -97,9 +96,10 @@ local function ValidateSkinIds(skinIds)
 end
 
 local function ValidateMinimapIcon(icon)
-	if type(icon.minimapPos) ~= "number" then
-		icon.minimapPos = nil
+	if type(icon.minimapPos) ~= "number" or icon.minimapPos ~= icon.minimapPos then
+		icon.minimapPos = MINIMAP_POS
 	end
+	icon.minimapPos = ((icon.minimapPos % 360) + 360) % 360
 	if type(icon.hide) ~= "boolean" then
 		icon.hide = nil
 	end
@@ -217,6 +217,16 @@ local function MigrateDB(db)
 			end
 		end
 	end
+	if version < 8 then
+		-- The built-in button kept its own angle. LibDBIcon's table holds it now.
+		if type(db.minimapIcon) ~= "table" then
+			db.minimapIcon = {}
+		end
+		if type(db.minimapIcon.minimapPos) ~= "number" and type(db.minimapAngle) == "number" then
+			db.minimapIcon.minimapPos = db.minimapAngle
+		end
+		db.minimapAngle = nil
+	end
 	db.version = DB_VERSION
 end
 
@@ -230,7 +240,7 @@ function ns.ResetSettings(db)
 	end
 	db.bannerUnlocked = false
 	if type(db.minimapIcon) == "table" then
-		db.minimapIcon.minimapPos = db.minimapAngle
+		db.minimapIcon.minimapPos = MINIMAP_POS
 		db.minimapIcon.hide = not db.showMinimapButton
 	end
 end
@@ -256,3 +266,6 @@ function ns.LoadDB(saved)
 	ValidateCustomNodes(db.customNodes)
 	return db
 end
+
+ns.DB_VERSION = DB_VERSION
+ns.MINIMAP_POS = MINIMAP_POS

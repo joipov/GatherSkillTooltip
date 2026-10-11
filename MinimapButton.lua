@@ -23,7 +23,7 @@ local function UpdateMinimapButtonPosition()
 	if minimapBtn:GetParent() ~= Minimap then
 		return
 	end
-	local angle = math.rad(ns.db.minimapAngle or 200)
+	local angle = math.rad(ns.db.minimapIcon.minimapPos)
 	local radius = (Minimap:GetWidth() / 2) + 10
 	minimapBtn:ClearAllPoints()
 	minimapBtn:SetPoint("CENTER", Minimap, "CENTER", math.cos(angle) * radius, math.sin(angle) * radius)
@@ -41,15 +41,12 @@ local function MinimapIconDB()
 	return icon
 end
 
--- Moves the launcher back to db.minimapAngle. Used by the settings reset.
+-- Re-applies the launcher position. Used by the settings reset.
 function ns.SyncMinimapIconPosition()
 	if not ns.db then
 		return
 	end
 	local icon = ns.db.minimapIcon
-	if type(icon) == "table" then
-		icon.minimapPos = ns.db.minimapAngle
-	end
 	if ldbIcon and ldbIcon.Refresh and icon then
 		ldbIcon:Refresh(ns.TITLE, icon)
 	end
@@ -123,9 +120,6 @@ local function TryLibDBIcon()
 	end
 
 	local iconDB = MinimapIconDB()
-	if not iconDB.minimapPos then
-		iconDB.minimapPos = ns.db.minimapAngle or 200
-	end
 	if not icon:IsRegistered(ns.TITLE) then
 		icon:Register(ns.TITLE, obj, iconDB)
 	end
@@ -158,7 +152,7 @@ local function OnButtonDragUpdate()
 	local mx, my = Minimap:GetCenter()
 	local px, py = GetCursorPosition()
 	local scale = Minimap:GetEffectiveScale()
-	ns.db.minimapAngle = math.deg(math.atan2(py / scale - my, px / scale - mx))
+	ns.db.minimapIcon.minimapPos = math.deg(math.atan2(py / scale - my, px / scale - mx)) % 360
 	UpdateMinimapButtonPosition()
 end
 
