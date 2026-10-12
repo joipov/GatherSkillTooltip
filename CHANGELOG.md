@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.1.3
+
+Forever herbs and ores that share a classic requirement use that band before you gather them.
+
+### Added
+
+- **Nightmare Moss** uses the Kingsblood band. **Dreamroot** uses the Firebloom band. **Moonroot** and **Star Lotus** use the Gromsblood band.
+- **Cold Iron Deposit** uses the Iron Deposit band. **Fool's Gold Vein** uses the Mithril Deposit band. **Starsilver Vein** and **Greater Moonstone Formation** use the Small Thorium Vein band.
+- **Heavy Thorium Vein** requires 300. Its band is 300 / 325 / 365 / 400.
+
 ## 2.1.2
 
 The login line shows the addon name and version. The Joipov name color is a brighter violet.
