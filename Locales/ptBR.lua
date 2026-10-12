@@ -51,7 +51,7 @@ ns.RegisterLocale({
 	WARN_TRAIN_TIP = "Uma mensagem curta no meio da tela ao coletar quando %s, %s ou %s está no limite e um treinador ainda tem um nível maior.",
 	TRAIN_NEXT = "Aprenda o próximo nível de %s.",
 	SHOW_MINIMAP = "Mostrar botão do minimapa",
-	SHOW_MINIMAP_TIP = "Botão no minimapa. Abre as opções. O Ellesmere coloca junto com os outros botões de addon.",
+	SHOW_MINIMAP_TIP = "Botão no minimapa. Abre as opções.",
 	OPEN_FAILED = "não foi possível abrir as opções.",
 	DEBUG_ON = "ligado",
 	DEBUG_OFF = "desligado",

@@ -51,7 +51,7 @@ ns.L = {
 	WARN_TRAIN_TIP = "A short message in the middle of the screen when you gather while %s, %s, or %s is capped and a trainer still has a higher rank.",
 	TRAIN_NEXT = "Train the next %s rank.",
 	SHOW_MINIMAP = "Minimap button",
-	SHOW_MINIMAP_TIP = "Button on the minimap. Opens settings. Ellesmere puts it with the other addon buttons.",
+	SHOW_MINIMAP_TIP = "Button on the minimap. Opens settings.",
 	OPEN_FAILED = "Couldn't open settings.",
 	DEBUG_ON = "on",
 	DEBUG_OFF = "off",
@@ -63,7 +63,7 @@ ns.L = {
 	EXAMPLE_HERB = "Peacebloom",
 }
 
--- Tooltip name -> node (ARCH-004): English names from ns.NODES; each
+-- Tooltip name -> node. English names from ns.NODES; each
 -- locale file adds its aliases. A separate table, ns.NODES is not mutated.
 local lookup = {}
 -- Node key -> the name to show, in the client's language.
@@ -76,7 +76,7 @@ ns.LOOKUP = lookup
 ns.NODE_DISPLAY = display
 
 -- Called by Locales/<locale>.lua, which the TOC loads only on that client
--- locale ([AllowLoadTextLocale], ARCH-005/PERF-005): overlays UI strings and
+-- locale ([AllowLoadTextLocale]): overlays UI strings and
 -- registers localized object names.
 function ns.RegisterLocale(strings, aliases)
 	local L = ns.L

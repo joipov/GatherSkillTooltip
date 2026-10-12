@@ -14,7 +14,7 @@ ns.SKIN_TYPES = {
 	[ns.L.CREATURE_DRAGONKIN] = true,
 }
 
--- The client's own "Skinnable" tooltip string when available (COMPAT-004);
+-- The client's own "Skinnable" tooltip string when available.
 -- the localized table entry is the fallback.
 ns.SKINNABLE_TEXT = _G.UNIT_SKINNABLE_LEATHER or ns.L.SKINNABLE
 

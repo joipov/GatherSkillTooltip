@@ -28,7 +28,7 @@ end
 
 -- Loot tracking -----------------------------------------------------------------
 
--- CQ-002: on Classic-rules clients the "Skinnable" tooltip line appears only
+-- on Classic-rules clients the "Skinnable" tooltip line appears only
 -- after a corpse has been emptied. A missing line is therefore treated as
 -- "cannot be skinned" only for corpses this client has fully looted.
 local lootedCorpses = {}
@@ -48,7 +48,7 @@ end
 
 function ns.OnLootOpened()
 	-- The corpse being looted is under the cursor (right-click) or targeted.
-	-- CQ-103: debug which GUID won so a session can decide whether the target
+	-- debug which GUID won so a session can decide whether the target
 	-- fallback is safe. The fallback itself stays until that session.
 	local mouseGuid = DeadUnitGUID("mouseover")
 	local targetGuid = DeadUnitGUID("target")
@@ -86,7 +86,7 @@ end
 
 local lootEventsActive = false
 
--- Loot events are only registered while skinning learning can run (ARCH-002).
+-- Loot events are only registered while skinning learning can run.
 function ns.UpdateLootEvents()
 	local db = ns.db
 	local active = (db and db.enabled and db.skinning) and true or false
@@ -133,7 +133,7 @@ local function ColorWord(prefix)
 end
 
 -- Display name and band for a learned-data key: "skin:N" or a node key
--- (ns.NODE_BY_KEY, ARCH-004).
+-- (ns.NODE_BY_KEY).
 local function GatherSubject(key)
 	local level = type(key) == "string" and key:match("^skin:(%d+)$")
 	if level then
@@ -225,8 +225,8 @@ local function CancelGatherWatch()
 end
 
 -- UNIT_SPELLCAST_START: arm a watch for a gathering spell. The node key and,
--- when there is no known node, the unmatched object name are snapshotted here
--- (CQ-101). Success does not read the tooltip again.
+-- when there is no known node, the unmatched object name are snapshotted here.
+-- Success does not read the tooltip again.
 function ns.OnGatherCastStart(spellID)
 	local prof = ns.ProfessionForGatherSpell(spellID)
 	if not prof or not ns.db or not ns.db.enabled then
@@ -274,7 +274,7 @@ end
 -- UNIT_SPELLCAST_SUCCEEDED: a known-node watch becomes pending and a miss is
 -- recorded unless a skill-up arrives within GATHER_WATCH_SECONDS. An unknown
 -- herb/ore is learned only from the name snapshotted at cast start, using
--- that pre-cast skill (CQ-101, CQ-105).
+-- that pre-cast skill.
 function ns.OnGatherCastSucceeded(spellID)
 	if SecretBlocked(spellID) then
 		return

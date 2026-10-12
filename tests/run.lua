@@ -1,7 +1,7 @@
--- Unit tests for the pure parts of GatherSkillTooltip (TOOL-005).
+-- Unit tests for the pure parts of GatherSkillTooltip.
 -- Plain Lua 5.1 / LuaJIT, no game client:
---   luajit tests/run.lua      (from the repository root)
---   lua5.1 tests/run.lua
+-- luajit tests/run.lua (from the repository root)
+-- lua5.1 tests/run.lua
 -- Files that touch the WoW API at load (Events.lua, Options.lua, Warnings.lua)
 -- are not loaded here; they are covered by the in-game checklist in CODE_AUDIT.md.
 -- Tooltip.lua and Learning.lua only bind globals at load, so they are loaded

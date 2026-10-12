@@ -1,8 +1,8 @@
 local _, ns = ...
 
 -- On-screen banners: the tracking warning ("Find Herbs is off") and the
--- trainer reminder ("visit a trainer"). One frame factory serves both
--- (ARCH-003); frames are created on first use, never at load.
+-- trainer reminder ("visit a trainer"). One frame factory serves both.
+-- Frames are created on first use, never at load.
 
 local C_Timer = C_Timer
 local C_Minimap = C_Minimap
@@ -206,7 +206,7 @@ local function EnsureWarningFrame()
 	warningFrame:SetScript("OnMouseUp", OnAnchorMouseUp)
 end
 
--- Tracking state comes from the minimap tracking list only (COMPAT-002).
+-- Tracking state comes from the minimap tracking list only.
 -- C_UnitAuras.GetPlayerAuraBySpellID is RequiresNonSecretAura in this build,
 -- so it returns nothing in combat and only duplicates this answer otherwise.
 -- C_Minimap.GetTrackingInfo carries no secret flags.
@@ -232,7 +232,7 @@ end
 
 local CheckTracking
 
--- Debug instrumentation for COMPAT-002: which event caused the last visible
+-- Which event caused the last visible
 -- warning change. If UNIT_AURA never appears here over a full session, the
 -- UNIT_AURA entry in TRACKING_EVENTS can be dropped.
 local trackingTrigger
@@ -354,7 +354,7 @@ function ns.LockBanner()
 end
 
 -- Tracking events are registered only while the warning feature can do
--- anything (ARCH-002); UNIT_AURA in particular fires on every aura change.
+-- anything. UNIT_AURA in particular fires on every aura change.
 local trackingEventsActive = false
 
 local function SetTrackingEvents(active)
@@ -366,7 +366,7 @@ local function SetTrackingEvents(active)
 end
 
 -- Warning texts are built once the spell name is available and then reused
--- by the 1 Hz watchdog (PERF-003). A fallback-name result is not cached so
+-- by the 1 Hz watchdog. A fallback-name result is not cached so
 -- the real spell name is picked up once the client has it.
 local spellOffMessages = {}
 
@@ -436,7 +436,7 @@ local function OnTrackingTimer()
 	trackingTrigger = nil
 end
 
--- Coalesces bursts of tracking-related events into one check (PERF-001):
+-- Coalesces bursts of tracking-related events into one check :
 -- one pending timer, one shared callback, no per-event closures.
 function ns.QueueTrackingCheck()
 	if trackingTimer then

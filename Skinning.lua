@@ -111,7 +111,7 @@ local function UnitNpcID(unit, data)
 end
 
 -- Unknown NPCs fall back to creature type: numeric id first (locale
--- independent), localized name second (COMPAT-003). In debug mode a
+-- independent), localized name second. In debug mode a
 -- disagreement between the two is printed so the id table can be confirmed.
 local function SkinnableCreatureType(unit)
 	local kind, kindID = UnitCreatureType(unit)
@@ -188,7 +188,7 @@ end
 
 -- Prefers the tooltip data lines (the source the tooltip is rendered from);
 -- the font-string scan is only the fallback when the data is inaccessible
--- (PERF-002: one scan per hover, not two).
+-- (one scan per hover, not two).
 local function TooltipHasSkinnable(tooltip, data)
 	if data and CanIndex(data) and CanIndex(data.lines) then
 		local lines = data.lines
@@ -242,7 +242,7 @@ local function LearnSkin(tooltip, data, unit, dead, npcID)
 	if previous ~= nil then
 		return
 	end
-	-- Negative evidence is only trusted for our own, fully looted corpse (CQ-002).
+	-- Negative evidence is only trusted for our own, fully looted corpse.
 	if CorpseIsOurs(unit) and ns.CorpseLooted(unit, data) then
 		db.skinIds[npcID] = false
 		ns.LearnChat(ns.L.LEARNED_SKIN_NO:format(name))
@@ -250,7 +250,7 @@ local function LearnSkin(tooltip, data, unit, dead, npcID)
 end
 
 -- Static skinning bands, one table per creature level, created on first use
--- and reused on every later hover (PERF-004). `key` is the learned-data key.
+-- and reused on every later hover. `key` is the learned-data key.
 local SKIN_BANDS = {}
 
 function ns.SkinningBand(level)
@@ -316,7 +316,7 @@ local function ApplySkinningLine(tooltip, unit, dead, npcID)
 end
 
 -- Unit and Corpse tooltips: resolve unit token, death state and NPC id once
--- per hover and hand them to both consumers (PERF-002).
+-- per hover and hand them to both consumers.
 function ns.OnUnitTooltip(tooltip, data)
 	local db = ns.db
 	if not db or not db.enabled or not tooltip then

@@ -1,5 +1,21 @@
 # Changelog
 
+## 2.1.5
+
+The minimap button tooltip is the same sentence in every language.
+
+### Changed
+
+- The minimap button tooltip says the button opens settings.
+
+## 2.1.4
+
+Same skill colors. The minimap button matches the other Joipov addons.
+
+### Changed
+
+- The minimap launcher is the shared button. Click still opens settings.
+
 ## 2.1.3
 
 Forever herbs and ores that share a classic requirement use that band before you gather them.
@@ -70,7 +86,7 @@ The minimap button is on by default, including saves that still had it off.
 ### Changed
 
 - **Minimap Button** sits under Enable and starts on. Click opens settings.
-- The button uses LibDBIcon when that library is loaded, and the same frame name when it is not, so the default minimap, the addon compartment, Ellesmere, and ElvUI can all show it.
+- The button uses LibDBIcon when that library is loaded, and the same frame name when it is not, so the default minimap and the addon compartment can show it.
 
 ## 2.0.4
 
@@ -164,33 +180,30 @@ place on first load.
 
 - A gather cast is attributed to the hovered node only if the hover happened
   within the last 15 seconds; hovering an unknown object or an ambiguous
-  stack of minimap pins clears the memory (CQ-001).
+  stack of minimap pins clears the memory.
 - "Cannot be skinned" is learned only for your own corpse after you have
   fully looted it, so the missing "Skinnable" line on an unlooted corpse no
-  longer marks an NPC as unskinnable (CQ-002).
+  longer marks an NPC as unskinnable.
 - SavedVariables are versioned and validated on load: legacy minimap angle
   and position values are migrated once, string-keyed skill counts become
-  numeric, and any option with a wrong type resets to its default
-  (CQ-004, CQ-005).
+  numeric, and any option with a wrong type resets to its default.
 - The tracking warning's aura check was inert in combat on this client; the
-  warning now uses the minimap tracking list only (COMPAT-002).
+  warning now uses the minimap tracking list only.
 
 ### Changed
 
 - Skinnable creature types are matched by numeric creature type id first,
   with the localized name as fallback; the "Skinnable" text uses the client's
-  own `UNIT_SKINNABLE_LEATHER` string (COMPAT-003, COMPAT-004).
+  own `UNIT_SKINNABLE_LEATHER` string.
 - Tracking, loot and aura events are registered only while the feature that
-  needs them is enabled; tracking checks are coalesced into one timer
-  (PERF-001, ARCH-002).
+  needs them is enabled; tracking checks are coalesced into one timer.
 - One unit/NPC resolution per hover; tooltip data lines are trusted before
-  font strings are scanned; warning texts and skinning bands are cached
-  (PERF-002, PERF-003, PERF-004).
+  font strings are scanned; warning texts and skinning bands are cached.
 - Fallbacks for other clients (`UnitIsTapped*`, `GetSpellInfo`,
   `OnTooltipSetUnit`, API existence guards) were removed; the addon targets
-  the Forever client only (COMPAT-005).
+  the Forever client only.
 - `Core.lua` was split into per-concern files (see `README.md`), with a
-  dispatch table for events and a shared banner factory (ARCH-001..004).
+  dispatch table for events and a shared banner factory.
 - `/gst stats` prints diagnostic counters for the GameTooltip fallback.
 
 ### Development

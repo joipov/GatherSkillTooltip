@@ -1,6 +1,6 @@
 local ADDON_NAME, ns = ...
 
--- The addon's single event frame, the event dispatch table (ARCH-002), the
+-- The addon's single event frame, the event dispatch table, the
 -- tooltip post-call registrations and the GameTooltip fallback hook. This is
 -- the only file that touches the WoW API at load time.
 
@@ -125,12 +125,12 @@ eventFrame:RegisterEvent("ADDON_LOADED")
 TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.MinimapMouseover, ns.OnObjectTooltip)
 TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Object, ns.OnObjectTooltip)
 TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Unit, ns.OnUnitTooltip)
--- UI-002: dead NPCs arrive as Unit tooltips; Corpse is kept until an in-game
+-- Dead NPCs arrive as Unit tooltips. Corpse is kept until an in-game
 -- check confirms it never carries a resolvable unit (then remove this line).
 TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Corpse, ns.OnUnitTooltip)
 
--- UI-001: fallback for GameTooltip shows that carry no tooltip data. Typed
--- tooltips (Object, MinimapMouseover, Unit, ...) are handled by the post-calls
+-- Fallback for GameTooltip shows that carry no tooltip data. Typed
+-- tooltips (Object, MinimapMouseover, Unit,...) are handled by the post-calls
 -- above, so this only runs for UI tooltips. It is instrumented: if a full
 -- session reported by `/gst stats` shows 0 applied, this block can go.
 ns.fallbackStats = { shown = 0, checked = 0, applied = 0, retried = 0 }

@@ -51,7 +51,7 @@ ns.RegisterLocale({
 	WARN_TRAIN_TIP = "%s, %s 또는 %s 숙련도가 한계이고 기술 전문가가 더 높은 등급을 가르칠 때, 채집하면 화면 가운데에 짧은 메시지가 나옵니다.",
 	TRAIN_NEXT = "다음 %s 등급을 배우세요.",
 	SHOW_MINIMAP = "미니맵 버튼 표시",
-	SHOW_MINIMAP_TIP = "미니맵의 버튼. 설정을 엽니다. Ellesmere가 다른 애드온 버튼과 함께 배치합니다.",
+	SHOW_MINIMAP_TIP = "미니맵의 버튼. 설정을 엽니다.",
 	OPEN_FAILED = "설정을 열 수 없습니다.",
 	DEBUG_ON = "켜짐",
 	DEBUG_OFF = "꺼짐",

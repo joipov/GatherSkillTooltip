@@ -47,7 +47,7 @@ end
 
 -- Applies defaults and resets any option whose type no longer matches its
 -- default (all options are booleans or numbers), so a corrupted or hand-edited
--- SavedVariables file recovers instead of erroring later (CQ-005).
+-- SavedVariables file recovers instead of erroring later.
 local function CopyDefaults(db)
 	for key, value in pairs(defaults) do
 		if type(db[key]) ~= type(value) then
@@ -128,7 +128,7 @@ local function ValidateCustomNodes(customNodes)
 	end
 end
 
--- One-time migrations keyed on db.version (CQ-004, ARCH-006). Runs before
+-- One-time migrations keyed on db.version. Runs before
 -- validation so legacy shapes are converted rather than discarded.
 local function MigrateDB(db)
 	local version = type(db.version) == "number" and db.version or 1
@@ -162,7 +162,7 @@ local function MigrateDB(db)
 	if version < 3 then
 		-- 2.0.x stored the lowered orange threshold in gainedAt, which is also
 		-- the highest gain. Seed orangeSeen once from a gainedAt that is still
-		-- below the table orange (CQ-102). A later load does not seed again.
+		-- below the table orange. A later load does not seed again.
 		if type(db.gather) == "table" and ns.TableOrange then
 			for key, obs in pairs(db.gather) do
 				if type(obs) == "table" and type(obs.orangeSeen) ~= "number" then

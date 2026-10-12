@@ -51,7 +51,7 @@ ns.RegisterLocale({
 	WARN_TRAIN_TIP = "Court message au milieu de l'écran quand vous récoltez alors que %s, %s ou %s est au maximum et qu'un maître propose encore un rang supérieur.",
 	TRAIN_NEXT = "Apprenez le rang suivant de %s.",
 	SHOW_MINIMAP = "Afficher le bouton de minicarte",
-	SHOW_MINIMAP_TIP = "Bouton sur la minicarte. Ouvre les réglages. Ellesmere le place avec les autres boutons d'addon.",
+	SHOW_MINIMAP_TIP = "Bouton sur la minicarte. Ouvre les réglages.",
 	OPEN_FAILED = "impossible d'ouvrir les réglages.",
 	DEBUG_ON = "activé",
 	DEBUG_OFF = "désactivé",

@@ -207,7 +207,6 @@ function ns.ResetAllSettings()
 	end
 	ns.ResetSettings(db)
 	ns.UpdateMinimapButton()
-	ns.SyncMinimapIconPosition()
 	ns.ApplyBannerLayout()
 	ns.QueueTrackingCheck()
 	ns.UpdateLootEvents()
@@ -233,7 +232,7 @@ _G.SlashCmdList.GATHERSKILLTOOLTIP = function(msg)
 		return
 	end
 	if msg == "stats" then
-		-- Diagnostic counters (UI-001); English only, not user-facing.
+		-- Diagnostic counters. English only, not user-facing.
 		local s = ns.fallbackStats
 		if s then
 			ns.Print(string.format(

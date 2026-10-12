@@ -51,7 +51,7 @@ ns.RegisterLocale({
 	WARN_TRAIN_TIP = "Un mensaje breve en el centro de la pantalla al recolectar si %s, %s o %s está al máximo y un instructor todavía enseña un rango superior.",
 	TRAIN_NEXT = "Aprende el siguiente rango de %s.",
 	SHOW_MINIMAP = "Mostrar botón del minimapa",
-	SHOW_MINIMAP_TIP = "Botón en el minimapa. Abre la configuración. Ellesmere lo pone con los demás botones de addons.",
+	SHOW_MINIMAP_TIP = "Botón en el minimapa. Abre la configuración.",
 	OPEN_FAILED = "no se pudo abrir la configuración.",
 	DEBUG_ON = "activado",
 	DEBUG_OFF = "desactivado",

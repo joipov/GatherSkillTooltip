@@ -51,7 +51,7 @@ ns.RegisterLocale({
 	WARN_TRAIN_TIP = "Kurzer Hinweis in der Bildschirmmitte, wenn du sammelst und %s, %s oder %s am Fertigkeitenlimit ist und ein Lehrer noch einen höheren Rang hat.",
 	TRAIN_NEXT = "Lerne den nächsten %s-Rang.",
 	SHOW_MINIMAP = "Minikarten-Button anzeigen",
-	SHOW_MINIMAP_TIP = "Button an der Minikarte. Öffnet die Einstellungen. Ellesmere legt ihn zu den anderen Addon-Buttons.",
+	SHOW_MINIMAP_TIP = "Button an der Minikarte. Öffnet die Einstellungen.",
 	OPEN_FAILED = "Einstellungen konnten nicht geöffnet werden.",
 	DEBUG_ON = "an",
 	DEBUG_OFF = "aus",
