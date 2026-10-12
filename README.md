@@ -5,7 +5,7 @@ herb or ore (in the world or on a minimap pin), and puts your Skinning skill
 beside the level of a creature you can skin. Learns from play: which NPCs are
 skinnable, and at which skill a node actually stopped giving skill-ups.
 
-Target client: World of Warcraft **Forever** (`camelot`, TOC `## Interface: 16001`).
+Target client: World of Warcraft **Forever** (`## Interface: 16001`).
 
 ## Features
 
