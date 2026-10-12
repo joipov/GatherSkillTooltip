@@ -51,7 +51,7 @@ ns.RegisterLocale({
 	WARN_TRAIN_TIP = "採集時如果%s、%s或%s已到目前上限，而且訓練師還有更高一階，就在畫面中央短暫提示。",
 	TRAIN_NEXT = "去學習下一階%s。",
 	SHOW_MINIMAP = "顯示小地圖按鈕",
-	SHOW_MINIMAP_TIP = "小地圖上的按鈕，用來打開設定。Ellesmere 會把它和其他插件按鈕放在一起。",
+	SHOW_MINIMAP_TIP = "小地圖上的按鈕，用來打開設定。",
 	OPEN_FAILED = "無法打開設定。",
 	DEBUG_ON = "開",
 	DEBUG_OFF = "關",

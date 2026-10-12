@@ -1,4 +1,4 @@
--- luacheck configuration (TOOL-003), modeled on the BigWigs layout:
+-- luacheck configuration, modeled on the BigWigs layout:
 -- Lua 5.1 semantics, an explicit list of WoW globals this addon reads, and
 -- only the intentional globals it writes. Anything else is an error.
 std = "lua51"

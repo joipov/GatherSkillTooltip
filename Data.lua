@@ -35,7 +35,7 @@ ns.TRACKING_SPELLS = {
 }
 
 -- Locale-independent creature type IDs, the second return of
--- UnitCreatureType (COMPAT-003). Confirm in-game with
+-- UnitCreatureType. Confirm in-game with
 -- /dump UnitCreatureType("target") on a beast; ns.SKIN_TYPES (Locales.lua)
 -- is the name fallback until that check is recorded in CODE_AUDIT.md.
 ns.SKIN_TYPE_IDS = {
@@ -154,7 +154,7 @@ for _, node in pairs(ns.NODES) do
 end
 
 -- Gathering spell id -> "herb" / "mine" / "skin". Secret ids are not used as
--- table keys (COMPAT-102). Called at event time, after TooltipText.lua has
+-- table keys. Called at event time, after TooltipText.lua has
 -- defined ns.SecretBlocked.
 function ns.ProfessionForGatherSpell(spellID)
 	if not spellID or ns.SecretBlocked(spellID) then

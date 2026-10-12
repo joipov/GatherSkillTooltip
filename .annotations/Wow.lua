@@ -1,7 +1,7 @@
 ---@meta
 
 -- LuaLS declarations for Blizzard globals that the Ketho "WoW API"
--- Core annotations do not define (TOOL-002). Only what this addon uses.
+-- Core annotations do not define. Only what this addon uses.
 -- Runtime source for each entry: Forever client build 70009 UI code
 -- (Blizzard_SharedXML/Tooltip/TooltipDataHandler.lua, Blizzard_Settings*).
 
@@ -35,7 +35,7 @@ function AddOnSetting:SetValueChangedCallback(callback) end
 ---@class SettingsCheckboxInitializer
 local SettingsCheckboxInitializer = {}
 ---@param parent SettingsCheckboxInitializer
----@param predicate fun(): boolean
+---@param predicate fun: boolean
 function SettingsCheckboxInitializer:SetParentInitializer(parent, predicate) end
 
 ---@class Settings

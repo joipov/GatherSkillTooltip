@@ -116,9 +116,9 @@ function ns.TableOrange(key)
 end
 
 -- The orange threshold after applying learned data. orangeSeen is the lowest
--- skill-up recorded below the table orange and only ever decreases (CQ-102).
+-- skill-up recorded below the table orange and only ever decreases.
 -- gainedAt is the highest gain and is not used here. Returns a number, never
--- a new table (PERF-004).
+-- a new table.
 function ns.EffectiveOrange(band, key)
 	local obs = GatherObs(key)
 	local seen = obs and obs.orangeSeen

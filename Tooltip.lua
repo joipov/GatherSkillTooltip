@@ -16,7 +16,7 @@ local lastNodeTime = 0
 local lastUnknownName
 local lastUnknownTime = 0
 -- A hovered node is only attributed to a gather cast that starts within this
--- window (CQ-001). Hovering an unknown object or an ambiguous pin stack clears it.
+-- window. Hovering an unknown object or an ambiguous pin stack clears it.
 local NODE_KEY_SECONDS = 15
 
 local function ShowUnmatched(raw, cleaned)
@@ -71,7 +71,7 @@ end
 
 -- Records the node under the cursor so a following gather cast can be
 -- attributed to it. `node` is nil when the hovered object is unknown; the
--- previous node is then forgotten so it cannot be misattributed (CQ-001).
+-- previous node is then forgotten so it cannot be misattributed.
 local function RememberNode(node)
 	if node and node.key and (node.prof == "herb" or node.prof == "mine") then
 		lastNodeKey = node.key
@@ -190,7 +190,7 @@ function ns.ApplyTooltip(tooltip, data, trackNode)
 		parts[#parts + 1] = nextLine
 	end
 	if trackNode then
-		-- Only an unambiguous stack is remembered (CQ-001).
+		-- Only an unambiguous stack is remembered.
 		if nodeCount == 1 then
 			RememberNode(singleNode)
 			ForgetUnknown()

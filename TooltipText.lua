@@ -40,7 +40,7 @@ function ns.Debug(...)
 end
 
 -- Secret values (combat restrictions): never compare, index, measure or use
--- as a table key. type() and truthiness on non-booleans are allowed.
+-- as a table key. type and truthiness on non-booleans are allowed.
 function ns.SecretBlocked(value)
 	return issecretvalue(value) and not canaccessvalue(value)
 end
@@ -104,7 +104,7 @@ end
 
 -- Text -----------------------------------------------------------------------
 
--- Removes |cAARRGGBB ... |r color codes (ARCH-003: the one strip helper).
+-- Removes |cAARRGGBB... |r color codes (the one strip helper).
 function ns.StripInline(text)
 	return (text:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", ""))
 end
@@ -167,7 +167,7 @@ function ns.RightFontStringByIndex(tooltip, index)
 end
 
 -- GetPrimaryTooltipData is the current accessor; GetTooltipData is the
--- "to be deprecated" alias (TooltipDataHandlerMixin, COMPAT-001).
+-- "to be deprecated" alias (TooltipDataHandlerMixin).
 function ns.PrimaryTooltipData(tooltip)
 	if tooltip.GetPrimaryTooltipData then
 		return tooltip:GetPrimaryTooltipData()

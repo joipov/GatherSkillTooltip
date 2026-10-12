@@ -51,7 +51,7 @@ ns.RegisterLocale({
 	WARN_TRAIN_TIP = "Un breve messaggio al centro dello schermo quando raccogli mentre %s, %s o %s è al limite e un istruttore ha ancora un grado più alto.",
 	TRAIN_NEXT = "Impara il grado successivo di %s.",
 	SHOW_MINIMAP = "Mostra il pulsante della minimappa",
-	SHOW_MINIMAP_TIP = "Pulsante sulla minimappa. Apre le impostazioni. Ellesmere lo mette con gli altri pulsanti degli addon.",
+	SHOW_MINIMAP_TIP = "Pulsante sulla minimappa. Apre le impostazioni.",
 	OPEN_FAILED = "impossibile aprire le impostazioni.",
 	DEBUG_ON = "attivo",
 	DEBUG_OFF = "disattivo",

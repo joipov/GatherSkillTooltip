@@ -51,7 +51,7 @@ ns.RegisterLocale({
 	WARN_TRAIN_TIP = "采集时如果%s、%s或%s已到当前上限，而且训练师还有更高一档，就在屏幕中间短暂提示。",
 	TRAIN_NEXT = "去学习下一档%s。",
 	SHOW_MINIMAP = "显示小地图按钮",
-	SHOW_MINIMAP_TIP = "小地图上的按钮，用来打开设置。Ellesmere 会把它和其他插件按钮放在一起。",
+	SHOW_MINIMAP_TIP = "小地图上的按钮，用来打开设置。",
 	OPEN_FAILED = "无法打开设置。",
 	DEBUG_ON = "开",
 	DEBUG_OFF = "关",
