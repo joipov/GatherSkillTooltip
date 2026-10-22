@@ -209,25 +209,31 @@ end
 -- Tracking state comes from the minimap tracking list only.
 -- C_UnitAuras.GetPlayerAuraBySpellID is RequiresNonSecretAura in this build,
 -- so it returns nothing in combat and only duplicates this answer otherwise.
--- C_Minimap.GetTrackingInfo carries no secret flags.
+-- A tracking entry whose fields are combat secrets cannot be compared, so
+-- the third return says the answer is unknown; the caller then stays quiet
+-- rather than warning about tracking it could not read.
 local function TrackingState()
 	local herbSpell = ns.FIND_HERBS_SPELL
 	local mineSpell = ns.FIND_MINERALS_SPELL
-	local herbOn, mineOn = false, false
+	local herbOn, mineOn, unknown = false, false, false
 	for i = 1, C_Minimap.GetNumTrackingTypes() do
 		local info = C_Minimap.GetTrackingInfo(i)
-		if type(info) == "table" and info.active then
-			if info.spellID == herbSpell then
-				herbOn = true
-			elseif info.spellID == mineSpell then
-				mineOn = true
-			end
-			if herbOn and mineOn then
-				break
+		if type(info) == "table" then
+			if ns.SecretBlocked(info.active) or ns.SecretBlocked(info.spellID) then
+				unknown = true
+			elseif info.active then
+				if info.spellID == herbSpell then
+					herbOn = true
+				elseif info.spellID == mineSpell then
+					mineOn = true
+				end
+				if herbOn and mineOn then
+					break
+				end
 			end
 		end
 	end
-	return herbOn, mineOn
+	return herbOn, mineOn, unknown
 end
 
 local CheckTracking
@@ -401,7 +407,13 @@ CheckTracking = function()
 	end
 	SetTrackingEvents(true)
 
-	local herbOn, mineOn = TrackingState()
+	local herbOn, mineOn, trackingUnknown = TrackingState()
+	if trackingUnknown then
+		-- Tracking could not be read (combat secrets). Do not warn about a
+		-- state that was not actually seen to be off.
+		HideWarning()
+		return
+	end
 	local message
 	if needHerb and needMine then
 		if herbOn or mineOn then

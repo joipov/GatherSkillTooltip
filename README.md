@@ -5,7 +5,7 @@ herb or ore (in the world or on a minimap pin), and puts your Skinning skill
 beside the level of a creature you can skin. Learns from play: which NPCs are
 skinnable, and at which skill a node actually stopped giving skill-ups.
 
-Target client: World of Warcraft **Forever** (`## Interface: 16001`).
+Target client: World of Warcraft **Forever**, release client (`_forever_`, `## Interface: 16001`). The old Forever beta (`_classic_beta_`) uses the same TOC and game type.
 
 ## Features
 
@@ -58,8 +58,10 @@ The repository lives outside the game folder; the AddOns entry is a
 directory junction to it:
 
 ```
-mklink /J "C:\Program Files (x86)\World of Warcraft\_classic_beta_\Interface\AddOns\GatherSkillTooltip" "D:\Repos\Joipov\GatherSkillTooltip"
+mklink /J "C:\Program Files (x86)\World of Warcraft\_forever_\Interface\AddOns\GatherSkillTooltip" "D:\Repos\Joipov\GatherSkillTooltip"
 ```
+
+The same link works under `_classic_beta_` if the old beta client is still installed.
 
 Static checks (no game client needed):
 

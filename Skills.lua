@@ -24,9 +24,16 @@ local function CacheProfession(index)
 		return
 	end
 	local _, _, skillLevel, maxSkillLevel, _, _, skillLine, skillModifier = GetProfessionInfo(index)
-	local rank = (skillLevel or 0) + (skillModifier or 0)
-	local base = skillLevel or 0
-	local maxSkill = maxSkillLevel or 0
+	-- Combat secrets cannot be added or compared: leave the skill unknown
+	-- (nil) rather than caching a number built from an unreadable one.
+	if ns.SecretBlocked(skillLine) or ns.SecretBlocked(skillLevel)
+		or ns.SecretBlocked(maxSkillLevel) or ns.SecretBlocked(skillModifier) then
+		return
+	end
+	local rank = (type(skillLevel) == "number" and skillLevel or 0)
+		+ (type(skillModifier) == "number" and skillModifier or 0)
+	local base = type(skillLevel) == "number" and skillLevel or 0
+	local maxSkill = type(maxSkillLevel) == "number" and maxSkillLevel or 0
 	local skills = ns.skills
 	if skillLine == ns.HERB_SKILL_LINE then
 		skills.herb, skills.herbBase, skills.herbMax = rank, base, maxSkill

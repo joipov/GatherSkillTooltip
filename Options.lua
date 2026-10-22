@@ -55,6 +55,9 @@ function ns.InitOptions()
 
 	local function AddCheckbox(key, label, tooltip, default)
 		if default == nil then
+			default = ns.defaults and ns.defaults[key]
+		end
+		if default == nil then
 			default = true
 		end
 		local setting = Settings.RegisterAddOnSetting(
@@ -93,7 +96,7 @@ function ns.InitOptions()
 		L.ENABLE:format(ns.DISPLAY),
 		L.ENABLE_TIP
 	)
-	local minimapCheckbox = AddCheckbox(
+	AddCheckbox(
 		"showMinimapButton",
 		L.SHOW_MINIMAP,
 		L.SHOW_MINIMAP_TIP
@@ -170,6 +173,7 @@ function ns.InitOptions()
 	local function MasterEnabled()
 		return enabledSetting:GetValue()
 	end
+	-- The Minimap button row stays live while the addon is off (house style).
 	for _, child in ipairs({
 		herbCheckbox,
 		mineCheckbox,
@@ -181,7 +185,6 @@ function ns.InitOptions()
 		warnCheckbox,
 		bannerUnlockCheckbox,
 		trainCheckbox,
-		minimapCheckbox,
 	}) do
 		child:SetParentInitializer(enabledCheckbox, MasterEnabled)
 	end
@@ -229,6 +232,10 @@ _G.SlashCmdList.GATHERSKILLTOOLTIP = function(msg)
 			ns.db.debug = not ns.db.debug
 			ns.Print("debug " .. (ns.db.debug and ns.L.DEBUG_ON or ns.L.DEBUG_OFF))
 		end
+		return
+	end
+	if msg == "help" then
+		ns.Print("Type /gst to open settings. /gst reset resets settings. /gst debug toggles debug output. /gst stats prints tooltip counters.")
 		return
 	end
 	if msg == "stats" then

@@ -1,5 +1,19 @@
 # Changelog
 
+## 2.1.6
+
+Hidden tracking and skill values in combat no longer produce wrong warnings or numbers.
+
+### Fixed
+
+- When the minimap tracking state cannot be read in combat, the tracking warning stays quiet instead of warning about a state that was not seen to be off.
+- A profession skill that cannot be read in combat is left unknown instead of being cached as a number built from a hidden value.
+
+### Changed
+
+- **Minimap button** stays active while the addon is off.
+- `/gst help` lists the subcommands.
+
 ## 2.1.5
 
 The minimap button tooltip is the same sentence in every language.
