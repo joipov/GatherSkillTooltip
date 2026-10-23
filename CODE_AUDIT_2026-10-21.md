@@ -6,6 +6,33 @@ Compared 2026-10-21 against NodeSight 1.4.1 (2026-10-21) and EllesmereUIMinimap
 
 This note is for development. It is not shipped in the addon zip.
 
+## What changed in 2.1.7
+
+- The tracking warning now carries a small text button per missing tracking
+  spell. The buttons call `C_Minimap.SetTracking` on the last readable index,
+  fall back to `CastSpellByID`, and hide the warning at once.
+- A successful tracking cast and a warning button click mark that profession
+  as on for five seconds. This covers combat, where the tracking list can
+  answer unknown or keep a stale off state. A delayed recheck runs when the
+  mark expires, so a failed enable still warns again.
+- `TrackingState` reports on/off per profession plus whether that profession's
+  state was readable. Unknown stays quiet; a readable off still warns.
+- The warning stays quiet for the whole of combat, where the list is secret
+  or stale, and re-checks on `PLAYER_REGEN_ENABLED`. Entering combat
+  (`PLAYER_REGEN_DISABLED`) triggers a check that hides it.
+- The banner default is 18 (was 20). DB v9 moves a stored 20 to 18 once.
+
+In-game check:
+
+- [ ] Warning shows with herb tracking off; clicking **Turn on Find Herbs**
+      turns it on and the warning goes away.
+- [ ] Enter combat while the warning is up; it hides and does not come back
+      after combat when tracking was turned on in combat.
+- [ ] Cast Find Minerals with both professions known; either one clears it.
+- [ ] Turn tracking off again after the optimistic window; the warning returns.
+- [ ] Unlock position still drags and locks, and the drag hint sits under the
+      buttons.
+
 ## What changed in 2.1.6
 
 - `TrackingState` no longer assumes `C_Minimap.GetTrackingInfo` fields are

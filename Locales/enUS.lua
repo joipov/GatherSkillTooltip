@@ -42,6 +42,7 @@ ns.L = {
 	BANNER_UNLOCK = "Unlock position",
 	BANNER_UNLOCK_TIP = "Shows the reminder so you can drag it. Right-click it to lock.",
 	BANNER_DRAG_HINT = "Right click when finished dragging",
+	BANNER_TURN_ON = "Turn on %s",
 	RESET_SETTINGS = "Reset settings",
 	RESET = "Reset",
 	RESET_TIP = "Checkboxes, text size, reminder position, and the minimap button go back to default. Learned herbs, ores, and skinning stay.",

@@ -15,7 +15,7 @@ local defaults = {
 	warnTracking = true,
 	warnTrain = true,
 	showMinimapButton = true,
-	bannerFont = 20,
+	bannerFont = 18,
 	bannerX = 0,
 	bannerY = 80,
 	debug = false,
@@ -25,7 +25,7 @@ local defaults = {
 ns.defaults = defaults
 
 -- Bump when a one-time migration is added to MigrateDB.
-local DB_VERSION = 8
+local DB_VERSION = 9
 local MINIMAP_POS = 200
 
 local BANNER_FONT_MIN = 10
@@ -226,6 +226,13 @@ local function MigrateDB(db)
 			db.minimapIcon.minimapPos = db.minimapAngle
 		end
 		db.minimapAngle = nil
+	end
+	if version < 9 then
+		-- The banner used to default to 20. Shrink that one value once so
+		-- existing installs get the smaller default; other sizes stay.
+		if db.bannerFont == 20 then
+			db.bannerFont = 18
+		end
 	end
 	db.version = DB_VERSION
 end

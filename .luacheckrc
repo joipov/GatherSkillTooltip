@@ -57,12 +57,14 @@ read_globals = {
 	"Enum",
 
 	-- Functions
+	"CastSpellByID",
 	"CreateFrame",
 	"GetCursorPosition",
 	"GetNumLootItems",
 	"GetProfessionInfo",
 	"GetProfessions",
 	"GetTime",
+	"InCombatLockdown",
 	"UnitCanAttack",
 	"UnitCreatureType",
 	"UnitExists",

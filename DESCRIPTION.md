@@ -16,7 +16,7 @@ A finished gather or skin corrects that guess for that node, or that skinning le
 
 Names, settings, and the skinning label follow the client language: English, German, French, Spanish, Italian, Portuguese, Korean, and both Chinese clients. A German client keeps **Maguskönigskraut (42/50)**. Not Russian. The addon name stays Gather Skill Tooltip, and `/gst` stays `/gst`.
 
-Forever allows one tracking spell at a time. If you know Herbalism or Mining and both Find Herbs and Find Minerals are off, a warning stays on screen until you turn one on, or turn the warning off. It starts in the middle. Text size and Unlock position shrink it and move it. One spell is enough if you have both professions. Skinning never raises it.
+Forever allows one tracking spell at a time. If you know Herbalism or Mining and both Find Herbs and Find Minerals are off, a warning stays on screen until you turn one on, or turn the warning off. The warning has a small text button that turns the missing tracking on for you, and it clears as soon as tracking is on. It stays quiet in combat, where the game hides the tracking state, and checks again when combat ends. It starts in the middle. Text size and Unlock position shrink it and move it. One spell is enough if you have both professions. Skinning never raises it.
 
 ## Settings
 
@@ -29,7 +29,7 @@ Open with `/gst`, `/gatherskilltooltip`, the minimap button, or Esc > Options > 
 *   **Color by difficulty** — colors the name or the skinning text. Starts from the table, then follows what you have gathered. If skill, required skill, and color are all off, the tooltip is left alone.
 *   **Chat when you learn something** — off by default. One line when a creature is learned as skinnable or not, when an unknown herb or ore is learned from gathering, or when a color changes. Learning still happens when this is off.
 *   **Warn if gathering tracking is off** — the on-screen tracking warning. One of Find Herbs or Find Minerals is enough.
-*   **Text size** — size of the tracking warning and the trainer reminder. 20 is the large default. The slider runs from 10 to 32.
+*   **Text size** — size of the tracking warning and the trainer reminder. 18 is the default. The slider runs from 10 to 32.
 *   **Unlock position** — off by default. Shows the reminder so you can drag it. Right-click locks it. A reload locks it too.
 *   **Remind me to train the next rank** — a short message when you gather or skin at your current cap and a trainer still has a higher rank. It uses the same size and position as the tracking warning.
 *   **Reset settings** — checkboxes, reminder position, and minimap button go back to default. Learned herbs, ores, and skinning stay. `/gst reset` does the same.

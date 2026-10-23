@@ -17,7 +17,8 @@ Target client: World of Warcraft **Forever**, release client (`_forever_`, `## I
 - Learned difficulty: a skill-up recorded below the table's orange threshold
   lowers it; repeated misses without a gain turn a node grey.
 - Warnings: an on-screen banner when Find Herbs / Find Minerals is off and
-  you know the profession, and a trainer reminder when a profession is capped.
+  you know the profession, with a small button that turns tracking on, and a
+  trainer reminder when a profession is capped.
 - Minimap launcher via LibDBIcon when present, otherwise a built-in button. On by default.
   Addon Compartment entry; `/gst` opens the settings.
 
@@ -94,6 +95,7 @@ version from the TOC and the manual changelog from `CHANGELOG.md`.
   stacked pins and an unknown object (no rewrite; `/gst debug` prints it).
 - Skinning: living beast (no line), your own unlooted dead beast (no "cannot
   skin" learned), looted skinnable (line, learned), humanoid (no line).
-- Toggle Find Herbs / Find Minerals in and out of combat; the banner appears
-  within a second and clears when tracking is back on.
+- Toggle Find Herbs / Find Minerals and use the warning's own text buttons;
+  the banner appears within a second and clears when tracking is back on.
+  It stays quiet in combat and re-checks when combat ends.
 - Watch `BugSack` (or the default error frame) through a combat session.

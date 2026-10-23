@@ -86,23 +86,76 @@ local function PlaceBanner(frame, extraY)
 	frame:SetPoint("CENTER", UIParent, "CENTER", x, y - dy + (extraY or 0))
 end
 
+-- Text buttons under the message. They are smaller than the message on
+-- purpose: the warning is the headline, the buttons are the fix.
+local BUTTON_GAP = 14
+local BUTTON_PADDING = 4
+
+local function LayoutButtons(row)
+	local totalWidth, maxHeight = 0, 0
+	local previous
+	for i = 1, #row.buttons do
+		local button = row.buttons[i]
+		if button:IsShown() then
+			button:ClearAllPoints()
+			if previous then
+				button:SetPoint("LEFT", previous, "RIGHT", BUTTON_GAP, 0)
+				totalWidth = totalWidth + BUTTON_GAP
+			else
+				button:SetPoint("LEFT", row, "LEFT", 0, 0)
+			end
+			previous = button
+			totalWidth = totalWidth + button:GetWidth()
+			local height = button:GetHeight()
+			if height > maxHeight then
+				maxHeight = height
+			end
+		end
+	end
+	if totalWidth < 1 then
+		totalWidth = 1
+	end
+	if maxHeight < 1 then
+		maxHeight = 1
+	end
+	row:SetSize(totalWidth, maxHeight)
+	return totalWidth, maxHeight
+end
+
 -- hint is the second line, passed only while this frame is the drag anchor.
+-- row is the optional text-button row under the message.
 -- bannerX and bannerY are the message center. The drag box hangs around that
 -- point, so locking does not move the message.
-local function LayoutText(frame, text, hint)
+local function LayoutText(frame, text, hint, row)
 	ApplyBannerFont(text)
 	local width = text:GetStringWidth()
 	local textH = text:GetStringHeight()
 	local height = textH
 	text:ClearAllPoints()
 	frame.messageDy = 0
+
+	local rowShown = false
+	if row and row:IsShown() then
+		local rowWidth, rowHeight = LayoutButtons(row)
+		rowShown = true
+		row:ClearAllPoints()
+		row:SetPoint("TOP", text, "BOTTOM", 0, -4)
+		if rowWidth > width then
+			width = rowWidth
+		end
+		height = height + 4 + rowHeight
+	end
+
 	if hint then
 		ApplyBannerFont(hint)
 		hint:SetText(ns.L.BANNER_DRAG_HINT)
 		hint:Show()
 		hint:ClearAllPoints()
-		text:SetPoint("TOP", 0, -12)
-		hint:SetPoint("TOP", text, "BOTTOM", 0, -2)
+		if rowShown then
+			hint:SetPoint("TOP", row, "BOTTOM", 0, -2)
+		else
+			hint:SetPoint("TOP", text, "BOTTOM", 0, -2)
+		end
 		local hintWidth = hint:GetStringWidth()
 		if hintWidth > width then
 			width = hintWidth
@@ -113,7 +166,6 @@ local function LayoutText(frame, text, hint)
 		frame:SetBackdropBorderColor(0.6, 0.6, 0.6, 1)
 		frame:EnableMouse(true)
 	else
-		text:SetPoint("CENTER")
 		frame:SetBackdrop(nil)
 		frame:EnableMouse(false)
 	end
@@ -123,8 +175,11 @@ local function LayoutText(frame, text, hint)
 	if height < 1 then
 		height = 1
 	end
+	text:SetPoint("TOP", 0, -12)
 	local frameH = height + 24
-	if hint then
+	if hint or rowShown then
+		-- Keep the message itself on the saved point; the buttons and the
+		-- drag hint hang below it.
 		frame.messageDy = frameH / 2 - (12 + textH / 2)
 	end
 	frame:SetSize(width + 32, frameH)
@@ -134,22 +189,67 @@ end
 
 local warningFrame
 local warningText
-local trackingTimer
-local lastWarningKey
+local warningHint
+local warningButtonRow
+local warningButtons = {}
 local warningElapsed = 0
+local lastWarningKey
+local warningHerbMissing
+local warningMineMissing
+local trackingTimer
+local optimisticTimer
 local WARNING_POLL_INTERVAL = 1.0
 local TRACKING_CHECK_DELAY = 0.5
+-- How long a cast or button click counts as "turned on" while the client
+-- will not tell us the real tracking state (combat secrets, stale reads).
+local OPTIMISTIC_SECONDS = 5
 
 local TRACKING_EVENTS = {
 	"MINIMAP_UPDATE_TRACKING",
+	"PLAYER_REGEN_DISABLED",
 	"PLAYER_REGEN_ENABLED",
 	{ "UNIT_AURA", "player" },
 }
 
-local warningHint
 local trainFrame
 local trainText
 local PlaceTrain
+local CheckTracking
+local trackingTrigger
+
+local function DebugTrackingChange(what)
+	ns.Debug("tracking warning", what, "after", trackingTrigger or "watchdog/other")
+end
+
+function ns.SetTrackingTrigger(event)
+	trackingTrigger = event
+end
+
+-- Last readable tracking-list index per profession. Kept across reads so the
+-- warning buttons still work when a combat read hides the list.
+local trackingIndex = { herb = nil, mine = nil }
+local enabledAt = {}
+
+local function MarkTrackingOn(prof)
+	enabledAt[prof] = GetTime()
+end
+
+local function OptimisticOn(prof)
+	local at = enabledAt[prof]
+	return at ~= nil and GetTime() - at < OPTIMISTIC_SECONDS
+end
+
+local function OnOptimisticTimer()
+	optimisticTimer = nil
+	CheckTracking()
+end
+
+local function ScheduleOptimisticRecheck()
+	if optimisticTimer then
+		return
+	end
+	optimisticTimer = C_Timer.NewTimer(OPTIMISTIC_SECONDS, OnOptimisticTimer)
+end
 
 local function RepositionTrain()
 	if PlaceTrain and trainFrame and trainFrame:IsShown() then
@@ -194,6 +294,160 @@ local function OnAnchorMouseUp(self)
 	end
 end
 
+-- Tracking state comes from the minimap tracking list only.
+-- C_UnitAuras.GetPlayerAuraBySpellID is RequiresNonSecretAura in this build,
+-- so it returns nothing in combat and only duplicates this answer otherwise.
+-- herbKnown/mineKnown are false when combat secrets or stale client data stop
+-- us from seeing whether that profession's tracking is on. Unknown is not off:
+-- the caller stays quiet instead of warning about a state it could not read.
+local function TrackingState()
+	local herbSpell = ns.FIND_HERBS_SPELL
+	local mineSpell = ns.FIND_MINERALS_SPELL
+	local herbOn, mineOn, herbKnown, mineKnown = false, false, true, true
+	local count = C_Minimap.GetNumTrackingTypes()
+	if ns.SecretBlocked(count) or type(count) ~= "number" then
+		return false, false, false, false
+	end
+	local sawSecret = false
+	for i = 1, count do
+		local info = C_Minimap.GetTrackingInfo(i)
+		if ns.CanIndex(info) then
+			local spellID = info.spellID
+			if ns.SecretBlocked(spellID) then
+				sawSecret = true
+			elseif spellID == herbSpell then
+				trackingIndex.herb = i
+				if ns.SecretBlocked(info.active) then
+					herbKnown = false
+				elseif info.active then
+					herbOn = true
+				end
+			elseif spellID == mineSpell then
+				trackingIndex.mine = i
+				if ns.SecretBlocked(info.active) then
+					mineKnown = false
+				elseif info.active then
+					mineOn = true
+				end
+			end
+		elseif info then
+			-- A secret entry may be the herb or ore tracker; it may also be
+			-- another tracking type. Treat the state as unknown, not as off.
+			sawSecret = true
+		end
+	end
+	if sawSecret then
+		if not herbOn then
+			herbKnown = false
+		end
+		if not mineOn then
+			mineKnown = false
+		end
+	end
+	return herbOn, mineOn, herbKnown, mineKnown
+end
+
+-- Button font: below the banner size, and never larger than 12.
+local function ApplyButtonFont(button)
+	local size = ns.ClampBannerFont(ns.db and ns.db.bannerFont) - 6
+	if size < 9 then
+		size = 9
+	elseif size > 12 then
+		size = 12
+	end
+	local small = _G.GameFontNormalSmall
+	local file, _, flags
+	if small and small.GetFont then
+		file, _, flags = small:GetFont()
+	end
+	if file then
+		button.label:SetFont(file, size, flags)
+	elseif small then
+		button.label:SetFontObject(small)
+	end
+	button:SetSize(button.label:GetStringWidth() + BUTTON_PADDING * 2, button.label:GetStringHeight() + 2)
+end
+
+local function PrepareButton(button, spellID, fallback)
+	local name = ns.SpellName(spellID, fallback)
+	if type(name) ~= "string" or ns.SecretBlocked(name) or name == "" then
+		name = fallback
+	end
+	button.label:SetText(ns.L.BANNER_TURN_ON:format(name))
+	ApplyButtonFont(button)
+end
+
+local function EnableTracking(prof)
+	TrackingState()
+	local index = trackingIndex[prof]
+	if type(index) == "number" and C_Minimap.SetTracking then
+		C_Minimap.SetTracking(index, true)
+	elseif CastSpellByID then
+		CastSpellByID(prof == "herb" and ns.FIND_HERBS_SPELL or ns.FIND_MINERALS_SPELL)
+	end
+	-- Act on it now, then let the next state read confirm it. This is what
+	-- clears the warning while combat hides the real tracking state.
+	MarkTrackingOn(prof)
+	CheckTracking()
+end
+
+local function CreateWarningButton(parent, prof)
+	local button = CreateFrame("Button", nil, parent)
+	local label = button:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+	label:SetPoint("LEFT", button, "LEFT", 0, 0)
+	label:SetPoint("RIGHT", button, "RIGHT", 0, 0)
+	label:SetJustifyH("CENTER")
+	label:SetTextColor(1, 0.82, 0)
+	button.label = label
+	button:SetScript("OnEnter", function(self)
+		self.label:SetTextColor(1, 1, 1)
+	end)
+	button:SetScript("OnLeave", function(self)
+		self.label:SetTextColor(1, 0.82, 0)
+	end)
+	button:SetScript("OnClick", function()
+		EnableTracking(prof)
+	end)
+	button:Hide()
+	return button
+end
+
+local function HideWarningButtons()
+	if warningButtonRow then
+		warningButtonRow:Hide()
+	end
+	if warningButtons.herb then
+		warningButtons.herb:Hide()
+	end
+	if warningButtons.mine then
+		warningButtons.mine:Hide()
+	end
+end
+
+local function ShowWarningButtons(herbMissing, mineMissing)
+	if not warningButtonRow then
+		return nil
+	end
+	if herbMissing then
+		PrepareButton(warningButtons.herb, ns.FIND_HERBS_SPELL, ns.L.FIND_HERBS)
+		warningButtons.herb:Show()
+	else
+		warningButtons.herb:Hide()
+	end
+	if mineMissing then
+		PrepareButton(warningButtons.mine, ns.FIND_MINERALS_SPELL, ns.L.FIND_MINERALS)
+		warningButtons.mine:Show()
+	else
+		warningButtons.mine:Hide()
+	end
+	if herbMissing or mineMissing then
+		warningButtonRow:Show()
+		return warningButtonRow
+	end
+	warningButtonRow:Hide()
+	return nil
+end
+
 local function EnsureWarningFrame()
 	if warningFrame then
 		return
@@ -202,59 +456,22 @@ local function EnsureWarningFrame()
 	warningHint = warningFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 	warningHint:SetJustifyH("CENTER")
 	warningHint:Hide()
+	warningButtonRow = CreateFrame("Frame", nil, warningFrame)
+	warningButtonRow.buttons = {}
+	warningButtonRow.buttons[1] = CreateWarningButton(warningButtonRow, "herb")
+	warningButtonRow.buttons[2] = CreateWarningButton(warningButtonRow, "mine")
+	warningButtons.herb = warningButtonRow.buttons[1]
+	warningButtons.mine = warningButtonRow.buttons[2]
+	warningButtonRow:Hide()
 	warningFrame:SetScript("OnMouseDown", OnAnchorMouseDown)
 	warningFrame:SetScript("OnMouseUp", OnAnchorMouseUp)
-end
-
--- Tracking state comes from the minimap tracking list only.
--- C_UnitAuras.GetPlayerAuraBySpellID is RequiresNonSecretAura in this build,
--- so it returns nothing in combat and only duplicates this answer otherwise.
--- A tracking entry whose fields are combat secrets cannot be compared, so
--- the third return says the answer is unknown; the caller then stays quiet
--- rather than warning about tracking it could not read.
-local function TrackingState()
-	local herbSpell = ns.FIND_HERBS_SPELL
-	local mineSpell = ns.FIND_MINERALS_SPELL
-	local herbOn, mineOn, unknown = false, false, false
-	for i = 1, C_Minimap.GetNumTrackingTypes() do
-		local info = C_Minimap.GetTrackingInfo(i)
-		if type(info) == "table" then
-			if ns.SecretBlocked(info.active) or ns.SecretBlocked(info.spellID) then
-				unknown = true
-			elseif info.active then
-				if info.spellID == herbSpell then
-					herbOn = true
-				elseif info.spellID == mineSpell then
-					mineOn = true
-				end
-				if herbOn and mineOn then
-					break
-				end
-			end
-		end
-	end
-	return herbOn, mineOn, unknown
-end
-
-local CheckTracking
-
--- Which event caused the last visible
--- warning change. If UNIT_AURA never appears here over a full session, the
--- UNIT_AURA entry in TRACKING_EVENTS can be dropped.
-local trackingTrigger
-
-function ns.SetTrackingTrigger(event)
-	trackingTrigger = event
-end
-
-local function DebugTrackingChange(what)
-	ns.Debug("tracking warning", what, "after", trackingTrigger or "watchdog/other")
 end
 
 local function ShowAnchor()
 	EnsureWarningFrame()
 	local message = lastWarningKey or ns.L.TRACKING_OFF_BOTH
 	warningText:SetText(message)
+	HideWarningButtons()
 	LayoutText(warningFrame, warningText, warningHint)
 	PlaceBanner(warningFrame, 0)
 	warningFrame:Show()
@@ -264,6 +481,8 @@ end
 local function HideWarning()
 	local wasShown = warningFrame and warningFrame:IsShown()
 	lastWarningKey = nil
+	warningHerbMissing = nil
+	warningMineMissing = nil
 	warningElapsed = 0
 	if warningFrame then
 		warningFrame:SetScript("OnUpdate", nil)
@@ -279,6 +498,7 @@ local function HideWarning()
 		if warningHint then
 			warningHint:Hide()
 		end
+		HideWarningButtons()
 		warningFrame:SetBackdrop(nil)
 		warningFrame:EnableMouse(false)
 		warningFrame:Hide()
@@ -294,18 +514,23 @@ local function WarningWatchdogOnUpdate(_, elapsed)
 	CheckTracking()
 end
 
-local function ShowWarning(message)
+local function ShowWarning(message, herbMissing, mineMissing)
 	EnsureWarningFrame()
 	if warningText:GetText() ~= message then
 		warningText:SetText(message)
 	end
 	local hint = nil
+	local row = nil
 	if AnchorUnlocked() then
 		hint = warningHint
-	elseif warningHint then
-		warningHint:Hide()
+		HideWarningButtons()
+	else
+		row = ShowWarningButtons(herbMissing, mineMissing)
+		if warningHint then
+			warningHint:Hide()
+		end
 	end
-	LayoutText(warningFrame, warningText, hint)
+	LayoutText(warningFrame, warningText, hint, row)
 	PlaceBanner(warningFrame, 0)
 	warningElapsed = 0
 	warningFrame:SetScript("OnUpdate", WarningWatchdogOnUpdate)
@@ -336,12 +561,13 @@ function ns.ApplyBannerLayout()
 		return
 	end
 	if lastWarningKey and db.enabled and db.warnTracking then
-		ShowWarning(lastWarningKey)
+		ShowWarning(lastWarningKey, warningHerbMissing, warningMineMissing)
 		return
 	end
 	if warningHint then
 		warningHint:Hide()
 	end
+	HideWarningButtons()
 	warningFrame:SetBackdrop(nil)
 	warningFrame:EnableMouse(false)
 	warningFrame:Hide()
@@ -382,6 +608,9 @@ local function SpellOffMessage(key, spellID, fallback)
 		return cached
 	end
 	local name = ns.SpellName(spellID, fallback)
+	if type(name) ~= "string" or ns.SecretBlocked(name) or name == "" then
+		name = fallback
+	end
 	local message = ns.L.SPELL_OFF:format(name)
 	if name ~= fallback then
 		spellOffMessages[key] = message
@@ -407,39 +636,73 @@ CheckTracking = function()
 	end
 	SetTrackingEvents(true)
 
-	local herbOn, mineOn, trackingUnknown = TrackingState()
-	if trackingUnknown then
-		-- Tracking could not be read (combat secrets). Do not warn about a
-		-- state that was not actually seen to be off.
+	-- The tracking list is secret or stale in combat on this client. Do not
+	-- keep a warning up on a state we cannot trust: stay quiet until combat
+	-- ends and verify then.
+	if InCombatLockdown() then
 		HideWarning()
 		return
 	end
+
+	local herbOn, mineOn, herbKnown, mineKnown = TrackingState()
+	if herbOn then
+		enabledAt.herb = nil
+	end
+	if mineOn then
+		enabledAt.mine = nil
+	end
+	local herbOk = herbOn or OptimisticOn("herb")
+	local mineOk = mineOn or OptimisticOn("mine")
+
+	local herbMissing, mineMissing = false, false
+	if needHerb and needMine then
+		if herbOk or mineOk then
+			-- One tracking spell is enough when both professions are on.
+			if (not herbOn and herbOk) or (not mineOn and mineOk) then
+				ScheduleOptimisticRecheck()
+			end
+			HideWarning()
+			return
+		end
+		herbMissing, mineMissing = true, true
+	elseif needHerb then
+		herbMissing = not herbOk
+	else
+		mineMissing = not mineOk
+	end
+
+	if not herbMissing and not mineMissing then
+		if (needHerb and not herbOn and herbOk) or (needMine and not mineOn and mineOk) then
+			ScheduleOptimisticRecheck()
+		end
+		HideWarning()
+		return
+	end
+
+	-- Never warn about tracking that could not be read. Wait for a readable
+	-- answer, or for the player to turn it on (caught by the cast/button path).
+	if (herbMissing and not herbKnown) or (mineMissing and not mineKnown) then
+		HideWarning()
+		return
+	end
+
 	local message
 	if needHerb and needMine then
-		if herbOn or mineOn then
-			HideWarning()
-			return
-		end
 		message = L.TRACKING_OFF_BOTH
 	elseif needHerb then
-		if herbOn then
-			HideWarning()
-			return
-		end
 		message = SpellOffMessage("herb", ns.FIND_HERBS_SPELL, L.FIND_HERBS)
 	else
-		if mineOn then
-			HideWarning()
-			return
-		end
 		message = SpellOffMessage("mine", ns.FIND_MINERALS_SPELL, L.FIND_MINERALS)
 	end
 
-	if message == lastWarningKey and warningFrame and warningFrame:IsShown() then
+	if message == lastWarningKey and warningFrame and warningFrame:IsShown()
+		and warningHerbMissing == herbMissing and warningMineMissing == mineMissing then
 		return
 	end
 	lastWarningKey = message
-	ShowWarning(message)
+	warningHerbMissing = herbMissing
+	warningMineMissing = mineMissing
+	ShowWarning(message, herbMissing, mineMissing)
 end
 
 local function OnTrackingTimer()
@@ -455,6 +718,22 @@ function ns.QueueTrackingCheck()
 		return
 	end
 	trackingTimer = C_Timer.NewTimer(TRACKING_CHECK_DELAY, OnTrackingTimer)
+end
+
+-- A successful Find Herbs / Find Minerals cast is the strongest signal we get
+-- in combat, where the tracking list may answer unknown or stay stale.
+function ns.NoteTrackingSpell(spellID)
+	if ns.SecretBlocked(spellID) then
+		return
+	end
+	if spellID == ns.FIND_HERBS_SPELL then
+		MarkTrackingOn("herb")
+	elseif spellID == ns.FIND_MINERALS_SPELL then
+		MarkTrackingOn("mine")
+	else
+		return
+	end
+	ns.QueueTrackingCheck()
 end
 
 -- Trainer reminder ---------------------------------------------------------------

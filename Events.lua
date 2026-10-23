@@ -79,6 +79,7 @@ local function OnTrackingEvent(_, _, _, event)
 	ns.QueueTrackingCheck()
 end
 handlers.MINIMAP_UPDATE_TRACKING = OnTrackingEvent
+handlers.PLAYER_REGEN_DISABLED = OnTrackingEvent
 handlers.PLAYER_REGEN_ENABLED = OnTrackingEvent
 handlers.UNIT_AURA = OnTrackingEvent
 
@@ -99,7 +100,7 @@ handlers.UNIT_SPELLCAST_FAILED = OnCastStopped
 
 function handlers.UNIT_SPELLCAST_SUCCEEDED(_, _, spellID)
 	if not ns.SecretBlocked(spellID) and ns.TRACKING_SPELLS[spellID] then
-		ns.QueueTrackingCheck()
+		ns.NoteTrackingSpell(spellID)
 	end
 	ns.OnGatherCastSucceeded(spellID)
 	local db = ns.db

@@ -1,5 +1,24 @@
 # Changelog
 
+## 2.1.7
+
+The tracking warning can turn tracking on itself and clears in combat.
+
+### Added
+
+- The tracking warning has a small text button for each missing tracking spell, **Turn on Find Herbs** or **Turn on Find Minerals**. Clicking one enables that tracking and clears the warning.
+
+### Changed
+
+- The warning and the trainer reminder default to text size 18 instead of 20. A stored 20 moves to 18 once; any other chosen size stays.
+- The **Text size** tooltip no longer calls 20 the large size.
+
+### Fixed
+
+- The tracking warning stays quiet in combat, where the client hides or stales the tracking state, and checks again when combat ends. Turning tracking on in combat no longer leaves the warning behind.
+- A successful tracking cast or a warning button click counts as on while a read is stale, so the warning does not linger. If the tracking really is still off, it returns after a few seconds or when combat ends.
+- Entering combat triggers a check, so a warning does not stay up on stale data.
+
 ## 2.1.6
 
 Hidden tracking and skill values in combat no longer produce wrong warnings or numbers.
