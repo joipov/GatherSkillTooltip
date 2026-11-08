@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.1.8
+
+Re-checked against the current Forever client; no code change was needed.
+
+### Changed
+
+- Verified against Forever client 1.60.1.70862 and the current EllesmereUIMinimap host.
+
 ## 2.1.7
 
 The tracking warning can turn tracking on itself and clears in combat.

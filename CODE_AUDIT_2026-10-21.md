@@ -1,10 +1,18 @@
 # Gather Skill Tooltip audit
 
-Target: World of Warcraft Forever, `## Interface: 16001` (client 1.60.1.70425), Lua 5.1.
-Compared 2026-10-21 against NodeSight 1.4.1 (2026-10-21) and EllesmereUIMinimap
-9.6.1 (2026-10-19). Behaviour only; nothing was taken from either.
+Target: World of Warcraft Forever, `## Interface: 16001` (client 1.60.1.70862), Lua 5.1.
+Compared 2026-10-21 against NodeSight 1.4.1 and EllesmereUIMinimap 9.6.1.
+Behaviour only; nothing was taken from either. Re-checked against client
+1.60.1.70862 and EllesmereUIMinimap 9.8.2 on 2026-11-08.
 
 This note is for development. It is not shipped in the addon zip.
+
+## What changed in 2.1.8
+
+- Re-checked the tracking reads, the warning buttons, and the minimap
+  button against client 1.60.1.70862. `C_Minimap.GetTrackingInfo`,
+  `C_Minimap.SetTracking`, and `CastSpellByID` keep their shapes, and the
+  Ellesmere minimap still collects `LibDBIcon10_*` frames. No code change.
 
 ## What changed in 2.1.7
 

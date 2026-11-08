@@ -40,7 +40,7 @@ globals = {
 	SlashCmdList = { fields = { "GATHERSKILLTOOLTIP" } },
 }
 
--- WoW API and Blizzard UI globals read by this addon (build 70425).
+-- WoW API and Blizzard UI globals read by this addon (build 70862).
 read_globals = {
 	-- Lua extensions and secret-value helpers
 	"issecretvalue",
