@@ -4,6 +4,8 @@ For World of Warcraft: Forever (Classic Plus).
 
 **Forever is still changing, and the gather numbers are not fully known. The addon starts from the vanilla herb and ore tables and the usual skinning formula, then learns from play and remembers it.**
 
+![Gather Skill Tooltip showing Mageroyal (42/50)](https://media.forgecdn.net/attachments/1965/123/260921_1616_37_806-helvetyscreenshot_crop-png.png)
+
 Hover a herb or ore and the tooltip shows your skill and the skill required, for example **Mageroyal (42/50)**. That works on a minimap pin and on the node in the world. Hover only. Nothing is drawn on the minimap, and the yellow gather dots are not recolored.
 
 Hover a beast or dragonkin and the same numbers sit beside its level, for example **Level 16 (Skinning 42/60) Boar**, including the corpse. Only if you have Skinning. Critters, pets, and friendly creatures are left alone until learned otherwise. Beast dots on the minimap stay as they are.
