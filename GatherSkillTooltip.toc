@@ -21,7 +21,7 @@
 ## AddonCompartmentFuncOnLeave: GatherSkillTooltip_OnAddonCompartmentLeave
 ## AllowLoadGameType: forever
 ## ExcludeLoadGameType: standard, classic
-## X-License: MIT
+## X-License: GPL-3.0-or-later
 ## X-Website: https://github.com/joipov/GatherSkillTooltip
 ## X-Curse-Project-ID: 1705965
 ## X-Wago-ID: rNkgyeNa
