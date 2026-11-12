@@ -2,20 +2,28 @@
 
 Shows your gathering skill and the skill a node requires when you hover a
 herb or ore (in the world or on a minimap pin), and puts your Skinning skill
-beside the level of a creature you can skin. Learns from play: which NPCs are
-skinnable, and at which skill a node actually stopped giving skill-ups.
+beside the level of a creature you can skin. Knows the Wowhead Forever herb
+and ore requirements, and learns unknown Forever herb and ore names, plus
+which NPCs are skinnable, from play.
 
-Target client: World of Warcraft **Forever**, release client (`_forever_`, `## Interface: 16001`). The old Forever beta (`_classic_beta_`) uses the same TOC and game type.
+Target client: World of Warcraft **Forever**, release client (`_forever_`, `## Interface: 16001`).
 
 ## Features
 
 - Herb and ore tooltips: `Peacebloom (70/1)`, colored red/orange/yellow/green/grey
-  by difficulty. Stacked minimap pins are handled line by line.
+  by difficulty. Stacked minimap pins are handled line by line, including the
+  client's `|n` line break.
+- Requirements checked against the Wowhead Forever object database (Herbs and
+  Mining lists) on 2026-11-10.
 - Skinning: `Level 12 (Skinning 100/20)` on creatures you can skin. NPC ids are
   learned from the "Skinnable" line on your own, fully looted corpses; unknown
   NPCs fall back to creature type (Beast, Dragonkin).
-- Learned difficulty: a skill-up recorded below the table's orange threshold
-  lowers it; repeated misses without a gain turn a node grey.
+- Known herbs and ores use the Wowhead Forever requirements. For names the
+  table does not know, a skill-up recorded below the learned orange lowers it;
+  repeated misses without a gain turn a node grey.
+- An unknown name can also be learned from the node's loot when the tooltip
+  had no readable name. The loot source must be a game object and its items
+  must be herbs, or ore with optional gems, for the gathering profession.
 - Warnings: an on-screen banner when Find Herbs / Find Minerals is off and
   you know the profession, with a small button that turns tracking on, and a
   trainer reminder when a profession is capped.
@@ -28,6 +36,7 @@ Target client: World of Warcraft **Forever**, release client (`_forever_`, `## I
 | --- | --- |
 | `/gst`, `/gatherskilltooltip` | Open the settings panel |
 | `/gst reset` | Reset settings to default. Learned herbs, ores, and skinning stay |
+| `/gst forget <name>` | Remove a wrongly learned herb or ore name and its observations |
 | `/gst debug` | Toggle debug output (unmatched tooltip names, learning traces) |
 | `/gst stats` | Print the GameTooltip fallback counters (diagnostic) |
 
@@ -62,8 +71,6 @@ directory junction to it:
 mklink /J "C:\Program Files (x86)\World of Warcraft\_forever_\Interface\AddOns\GatherSkillTooltip" "D:\Repos\Joipov\GatherSkillTooltip"
 ```
 
-The same link works under `_classic_beta_` if the old beta client is still installed.
-
 Static checks (no game client needed):
 
 ```
@@ -84,7 +91,7 @@ Local zip, with the addon folder at the root, written to `.release/`:
 powershell -File package.ps1
 ```
 
-Releases: push an annotated tag (`git tag -a 2.0.4 -m "2.0.4"`). The
+Releases: push an annotated tag (`git tag -a <version> -m "<version>"`). The
 `Package and release` workflow runs BigWigsMods/packager, which reads the game
 version from the TOC and the manual changelog from `CHANGELOG.md`.
 `CODE_AUDIT.md` holds the audit and remediation record and is not shipped.
@@ -93,6 +100,9 @@ version from the TOC and the manual changelog from `CHANGELOG.md`.
 
 - Hover Peacebloom / Copper Vein in the world and on the minimap; check
   stacked pins and an unknown object (no rewrite; `/gst debug` prints it).
+- Hover the guild roster, a party/raid frame, a bag item, an action-bar button,
+  and a unit frame: no node rewrite and no skinning line. World herb/ore and
+  unit tooltips and minimap pins still rewrite.
 - Skinning: living beast (no line), your own unlooted dead beast (no "cannot
   skin" learned), looted skinnable (line, learned), humanoid (no line).
 - Toggle Find Herbs / Find Minerals and use the warning's own text buttons;

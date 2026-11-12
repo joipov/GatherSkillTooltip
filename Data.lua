@@ -69,11 +69,23 @@ local copper = Node(1, 25, 100, mine)
 local peacebloom = Node(1, 25, 100, herb)
 local silverleaf = Node(1, 25, 100, herb)
 
+-- Requirements checked against Wowhead Forever's object database (Herbs and
+-- Mining lists) on 2026-11-10. Classic rows keep their Classic values; the
+-- Forever-only rows use the requirements shown there.
 ns.NODES = {
 	["Peacebloom"] = peacebloom,
 	["Wilted Peacebloom"] = peacebloom,
 	["Silverleaf"] = silverleaf,
 	["Stunted Silverleaf"] = silverleaf,
+	-- Forever starter and quest herbs. Wowhead Forever lists all of these at
+	-- Herbalism 1.
+	["Doom Weed"] = Node(1, 25, 100, herb),
+	["Gloom Weed"] = Node(1, 25, 100, herb),
+	["Hyjal Silphium"] = Node(1, 25, 100, herb),
+	["Incendia Agave"] = Node(1, 25, 100, herb),
+	["Serpentbloom"] = Node(1, 25, 100, herb),
+	["Tomb Weed"] = Node(1, 25, 100, herb),
+	["Violet Tragan"] = Node(1, 25, 100, herb),
 	["Earthroot"] = Node(15, 40, 115, herb),
 	["Mageroyal"] = Node(50, 75, 150, herb),
 	["Briarthorn"] = Node(70, 95, 170, herb),
@@ -104,6 +116,7 @@ ns.NODES = {
 	["Plaguebloom"] = Node(285, 310, 385, herb),
 	["Icecap"] = Node(290, 315, 390, herb),
 	["Black Lotus"] = Node(300, 325, 400, herb),
+	["Demonsage"] = Node(300, 325, 400, herb),
 
 	["Copper Vein"] = copper,
 	["Poor Copper Vein"] = copper,
@@ -138,6 +151,9 @@ ns.NODES = {
 	["Ooze Covered Rich Thorium Vein"] = Node(275, 300, 375, mine),
 	["Small Obsidian Chunk"] = Node(305, 330, 405, mine),
 	["Large Obsidian Chunk"] = Node(305, 330, 405, mine),
+	-- Forever mining objects. Wowhead Forever lists both at Mining 1.
+	["Chunk of Amber"] = Node(1, 25, 100, mine),
+	["Large Chunk of Amber"] = Node(1, 25, 100, mine),
 }
 
 -- Nodes sharing a table (copper variants) share one learned-data key: the

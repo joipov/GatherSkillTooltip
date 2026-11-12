@@ -32,6 +32,12 @@ local function ApplyDisplay(tooltip, fs, display)
 	if fs and not SecretBlocked(current) then
 		if ReadableString(current) ~= display then
 			fs:SetText(display)
+			fs:SetTextColor(1, 1, 1)
+			-- Editing the font string does not resize the tooltip by itself.
+			if tooltip.Show and tooltip.IsShown and tooltip:IsShown() then
+				tooltip:Show()
+			end
+			return true
 		end
 		fs:SetTextColor(1, 1, 1)
 		return true
@@ -40,6 +46,9 @@ local function ApplyDisplay(tooltip, fs, display)
 		return true
 	end
 	tooltip:AddLine(display)
+	if tooltip.Show and tooltip.IsShown and tooltip:IsShown() then
+		tooltip:Show()
+	end
 	return true
 end
 
@@ -47,6 +56,11 @@ local function ApplyLine(db, line)
 	local name, node, cleaned = ns.ExactNode(line)
 	if not node then
 		return line, false, nil, cleaned
+	end
+	-- A group member's name is a valid unit token; a node learned under the
+	-- same text (a player name hovered on the minimap) must not decorate it.
+	if ns.UnitNameExists(cleaned) then
+		return line, false, nil, nil
 	end
 	local title, prefix = ns.FormatNode(name, node)
 	if not title then
@@ -83,7 +97,7 @@ local function RememberNode(node)
 end
 
 local function RememberUnknown(cleaned)
-	if cleaned and cleaned ~= "" then
+	if cleaned and cleaned ~= "" and not ns.UnitNameExists(cleaned) then
 		lastUnknownName = cleaned
 		lastUnknownTime = GetTime()
 		return
@@ -131,13 +145,26 @@ function ns.ApplyTooltip(tooltip, data, trackNode)
 	if not data then
 		data = ns.PrimaryTooltipData(tooltip)
 	end
+	-- Tooltip data callbacks are generic. Comparison frames and other addon
+	-- tooltips can reach here without the GameTooltip methods used below, so
+	-- require them before matching or remembering anything.
+	if type(tooltip.GetName) ~= "function"
+		or type(tooltip.NumLines) ~= "function"
+		or type(tooltip.AddLine) ~= "function" then
+		return false
+	end
 
 	local raw, fs = ns.FirstLine(tooltip, data)
 	if not raw then
 		return false
 	end
 
-	if not raw:find("\n", 1, true) then
+	-- Stacked minimap pins use either a real newline or the |n escape.
+	local text = raw
+	if text:find("|n", 1, true) then
+		text = text:gsub("|n", "\n")
+	end
+	if not text:find("\n", 1, true) then
 		local line, matched, node, cleaned = ApplyLine(db, raw)
 		if trackNode then
 			if node then
@@ -170,7 +197,7 @@ function ns.ApplyTooltip(tooltip, data, trackNode)
 	local singleNode
 	local unknownCount = 0
 	local singleUnknown
-	for line in (raw .. "\n"):gmatch("(.-)\n") do
+	for line in (text .. "\n"):gmatch("(.-)\n") do
 		index = index + 1
 		local nextLine, lineMatched, node, cleaned = ApplyLine(db, line)
 		if index == 1 then
@@ -214,5 +241,16 @@ function ns.ApplyTooltip(tooltip, data, trackNode)
 end
 
 function ns.OnObjectTooltip(tooltip, data)
+	-- UI windows can reach here when the client sends an untyped object
+	-- tooltip (the guild roster, a party frame, a bag item). Their text is not
+	-- a world object name.
+	if not ns.TooltipOwnerIsWorld(tooltip) then
+		return false
+	end
+	-- A player or NPC dot on the minimap is a unit tooltip, not a node. A
+	-- learned name that happens to match a unit must never decorate it.
+	if ns.TooltipHasUnit(tooltip) then
+		return false
+	end
 	return ns.ApplyTooltip(tooltip, data, true)
 end

@@ -319,7 +319,12 @@ end
 -- per hover and hand them to both consumers.
 function ns.OnUnitTooltip(tooltip, data)
 	local db = ns.db
-	if not db or not db.enabled or not tooltip then
+	if not db or not db.enabled or not tooltip or type(tooltip.GetUnit) ~= "function" then
+		return
+	end
+	-- Skinning belongs on world unit tooltips. A party/raid frame or any other
+	-- UI window owns its tooltip; never append a skill line there.
+	if not ns.TooltipOwnerIsWorld(tooltip) then
 		return
 	end
 	local unit = UnitFromTooltip(tooltip, data)

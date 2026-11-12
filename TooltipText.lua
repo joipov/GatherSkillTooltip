@@ -7,6 +7,7 @@ local issecretvalue = issecretvalue
 local canaccessvalue = canaccessvalue
 local issecrettable = issecrettable
 local canaccesstable = canaccesstable
+local UnitExists = UnitExists
 
 local function Chat(text)
 	print("|cff8b5cf6Joipov|r " .. ns.DISPLAY .. ": " .. tostring(text or ""))
@@ -185,6 +186,139 @@ function ns.LastLineText(tooltip)
 	end
 	local fs = ns.FontStringByIndex(tooltip, count)
 	return fs and ReadableString(fs:GetText())
+end
+
+-- True when `frame` is `ancestor` or one of its descendants. Walks GetParent
+-- because not every frame in the Forever client has IsDescendantOf (Questie's
+-- map-icon buttons are one example).
+function ns.FrameIsUnder(frame, ancestor)
+	local current = frame
+	for _ = 1, 10 do
+		if current == ancestor then
+			return true
+		end
+		if not current or type(current.GetParent) ~= "function" then
+			return false
+		end
+		current = current:GetParent()
+	end
+	return false
+end
+
+-- True when the tooltip belongs to the world (or the minimap) rather than to a
+-- UI window. The guild roster, party/raid frames, bags, action bars and chat
+-- links all set themselves as the tooltip owner, so their lines must never be
+-- treated as world object names. An unowned tooltip is a world tooltip.
+function ns.TooltipOwnerIsWorld(tooltip)
+	if not tooltip or type(tooltip.GetOwner) ~= "function" then
+		return true
+	end
+	local owner = tooltip:GetOwner()
+	if not owner or owner == UIParent or owner == WorldFrame then
+		return true
+	end
+	-- A forbidden owner (a nameplate aura button, for example) cannot be
+	-- inspected from addon code; treat it as a UI window, never as world.
+	if type(owner.IsForbidden) == "function" and owner:IsForbidden() then
+		return false
+	end
+	-- The owner can be the minimap, one of its children (a pin) or the cluster
+	-- frame it lives in.
+	if Minimap and (ns.FrameIsUnder(owner, Minimap) or ns.FrameIsUnder(Minimap, owner)) then
+		return true
+	end
+	return false
+end
+
+-- True when a cleaned tooltip line is a unit token, such as a group member's
+-- name or "target". A learned name that is a unit must not be decorated as a
+-- herb or ore (for example a player name hovered on the minimap).
+function ns.UnitNameExists(name)
+	if not name or name == "" then
+		return false
+	end
+	local exists = UnitExists(name)
+	if SecretBlocked(exists) then
+		return true
+	end
+	return exists and true or false
+end
+
+-- True when the tooltip was built for a unit rather than a world object.
+-- Secret tokens count as a unit: leave them alone.
+function ns.TooltipHasUnit(tooltip)
+	if not tooltip or not tooltip.GetUnit then
+		return false
+	end
+	local _, unit = tooltip:GetUnit()
+	if unit == nil then
+		return false
+	end
+	if type(unit) ~= "string" or SecretBlocked(unit) then
+		return true
+	end
+	local exists = UnitExists(unit)
+	if SecretBlocked(exists) then
+		return true
+	end
+	return exists and true or false
+end
+
+-- True when the visible tooltip has a line carrying `name`, once colors and a
+-- skill suffix this addon added are stripped. Used before learning an unknown
+-- node so a name remembered from an earlier hover cannot be attributed to a
+-- later gather on a different object.
+function ns.TooltipShowsName(tooltip, name)
+	if not tooltip or type(name) ~= "string" or name == "" then
+		return false
+	end
+	if tooltip.IsShown and not tooltip:IsShown() then
+		return false
+	end
+	local count = tooltip:NumLines()
+	if SecretBlocked(count) or type(count) ~= "number" then
+		return false
+	end
+	for i = 1, count do
+		local fs = ns.FontStringByIndex(tooltip, i)
+		local text = fs and ReadableString(fs:GetText())
+		if text and ns.NormalizeName(ns.StripSkillSuffix(text)) == name then
+			return true
+		end
+	end
+	return false
+end
+
+-- True when the visible tooltip has a line whose cleaned name maps to the
+-- same node key. Handles locale aliases and stacked pins, so a remembered
+-- node is checked against the name the client actually shows.
+function ns.TooltipShowsNode(tooltip, key)
+	if not tooltip or type(key) ~= "string" or key == "" then
+		return false
+	end
+	if tooltip.IsShown and not tooltip:IsShown() then
+		return false
+	end
+	local count = tooltip:NumLines()
+	if SecretBlocked(count) or type(count) ~= "number" then
+		return false
+	end
+	local lookup = ns.LOOKUP
+	if not lookup then
+		return false
+	end
+	for i = 1, count do
+		local fs = ns.FontStringByIndex(tooltip, i)
+		local text = fs and ReadableString(fs:GetText())
+		if text then
+			local cleaned = ns.NormalizeName(ns.StripSkillSuffix(text))
+			local node = cleaned and lookup[cleaned]
+			if node and node.key == key then
+				return true
+			end
+		end
+	end
+	return false
 end
 
 local function DataLeftText(data)

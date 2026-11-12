@@ -222,29 +222,40 @@ end
 _G.SLASH_GATHERSKILLTOOLTIP1 = "/gst"
 _G.SLASH_GATHERSKILLTOOLTIP2 = "/gatherskilltooltip"
 _G.SlashCmdList.GATHERSKILLTOOLTIP = function(msg)
-	msg = (msg and msg:match("^%s*(.-)%s*$") or ""):lower()
-	if msg == "reset" then
+	local raw = msg and msg:match("^%s*(.-)%s*$") or ""
+	local lower = raw:lower()
+	if lower == "reset" then
 		ns.ResetAllSettings()
 		return
 	end
-	if msg == "debug" then
+	if lower == "debug" then
 		if ns.db then
 			ns.db.debug = not ns.db.debug
 			ns.Print("debug " .. (ns.db.debug and ns.L.DEBUG_ON or ns.L.DEBUG_OFF))
 		end
 		return
 	end
-	if msg == "help" then
-		ns.Print("Type /gst to open settings. /gst reset resets settings. /gst debug toggles debug output. /gst stats prints tooltip counters.")
+	if lower == "help" then
+		ns.Print("Type /gst to open settings. /gst reset resets settings. /gst forget <name> removes a learned node. /gst debug toggles debug output. /gst stats prints tooltip counters.")
 		return
 	end
-	if msg == "stats" then
+	if lower:match("^forget%s+") then
+		local name = raw:sub(7):match("^%s*(.-)%s*$")
+		local removed = ns.ForgetCustomNode(name)
+		if removed then
+			ns.Print(string.format('Forgot learned node "%s".', removed))
+		else
+			ns.Print("No learned node by that name.")
+		end
+		return
+	end
+	if lower == "stats" then
 		-- Diagnostic counters. English only, not user-facing.
 		local s = ns.fallbackStats
 		if s then
 			ns.Print(string.format(
-				"tooltip fallback: shown %d, checked %d, applied %d, retried %d",
-				s.shown, s.checked, s.applied, s.retried
+				"tooltip fallback: shown %d, checked %d, applied %d, skipped %d, retried %d",
+				s.shown, s.checked, s.applied, s.skipped, s.retried
 			))
 		end
 		return

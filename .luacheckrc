@@ -20,12 +20,18 @@ files["tests/"] = {
 		"canaccessvalue",
 		"issecrettable",
 		"canaccesstable",
+		"C_Item",
 		"C_Spell",
 		"C_Timer",
 		"C_TradeSkillUI",
+		"GetLootSlotLink",
+		"GetLootSourceInfo",
+		"GetNumLootItems",
 		"GetProfessionInfo",
 		"GetProfessions",
 		"GetTime",
+		"UnitExists",
+		"UnitNameFromGUID",
 	},
 }
 
@@ -50,6 +56,7 @@ read_globals = {
 
 	-- Namespaces
 	"C_AddOns",
+	"C_Item",
 	"C_Minimap",
 	"C_Spell",
 	"C_Timer",
@@ -60,6 +67,9 @@ read_globals = {
 	"CastSpellByID",
 	"CreateFrame",
 	"GetCursorPosition",
+	"GetLootSlotLink",
+	"GetLootSourceInfo",
+	"GetMouseFoci",
 	"GetNumLootItems",
 	"GetProfessionInfo",
 	"GetProfessions",
@@ -74,6 +84,7 @@ read_globals = {
 	"UnitIsTapDenied",
 	"UnitLevel",
 	"UnitName",
+	"UnitNameFromGUID",
 	"UnitPlayerControlled",
 	"UnitTokenFromGUID",
 
@@ -81,6 +92,7 @@ read_globals = {
 	"GameTooltip",
 	"Minimap",
 	"UIParent",
+	"WorldFrame",
 	"Settings",
 	"CreateSettingsListSectionHeaderInitializer",
 	"CreateSettingsButtonInitializer",

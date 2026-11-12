@@ -1,5 +1,66 @@
 # Changelog
 
+## 2.2.3
+
+### Fixed
+
+- Tooltips owned by a UI window (the guild roster, party/raid frames, bags, action bars, chat links) are never rewritten as herb or ore nodes, even when the client delivers them without typed tooltip data. The tooltip owner is checked in addition to the mouse focus.
+- A node name that is also a valid unit token (a group member's name from a minimap dot, for example) is never decorated or learned as a herb or ore.
+- Unit tooltips owned by a UI frame no longer receive a Skinning suffix.
+
+## 2.2.2
+
+Unknown herbs and ores can be learned even when their tooltip has no readable name, and minimap pin stacks using the `|n` escape are handled like real newlines.
+
+### Added
+
+- An unknown herb or ore is now learned from the loot window when the cast had no tooltip name. The addon reads the loot source and item classes, accepts only herbs or ore for the cast's profession (gems on ore are ignored), and records the skill from before the cast. Other loot, a non-game-object source, or a loot window more than three seconds after the gather is ignored.
+
+### Changed
+
+- Loot events stay registered while herbalism or mining is on, not only while skinning is on.
+- Decorated tooltip lines are remembered in a small bounded cache while a minimap pin is hovered. The cache is cleared when a custom node or locale alias changes.
+- The tooltip reflows after its first line is rewritten, so the longer skill line is not clipped.
+
+### Fixed
+
+- Stacked minimap pins separated with `|n` are split and decorated like pins separated with a real newline.
+- A generic tooltip callback no longer assumes the frame is a game tooltip. Frames without `GetUnit` or `AddLine` are skipped instead of throwing, the same failure mode that breaks `Gathering_Tooltip` r21 on item comparison tooltips.
+
+## 2.2.1
+
+### Fixed
+
+- Hovering a Questie map icon no longer throws `attempt to call a nil value` in the mouse-focus check. The addon walks the focus frame's parents instead of assuming every frame has `IsDescendantOf`.
+
+## 2.2.0
+
+Known Forever herbs and ores now use the Wowhead Forever requirements, and a stale hover cannot teach the wrong number.
+
+### Added
+
+- Hyjal Silphium, Tomb Weed, Doom Weed, Gloom Weed, Incendia Agave, Serpentbloom, and Violet Tragan at Herbalism 1, and Demonsage at Herbalism 300.
+- Chunk of Amber and Large Chunk of Amber at Mining 1.
+
+### Fixed
+
+- Khadgar's Whisker and other known nodes keep their verified requirement. A gain recorded below a known node's requirement, such as a Kingsblood gain attributed to a Khadgar's Whisker minimap pin, no longer lowers the displayed number or turns the node orange too early.
+- A remembered node is attributed to a gather only while that same name is still on the tooltip, so a stale minimap pin or an earlier hover cannot lend its name to a different node.
+- DB v10 drops built-in observations below the verified requirement. Custom names keep their learned data.
+
+## 2.1.9
+
+Tooltip rewriting stays on gathering tooltips; UI windows are left alone.
+
+### Fixed
+
+- UI tooltips (the guild roster, bags, action bars, unit frames, chat links) are never rewritten as herb or ore nodes, even when a player or object name matches a learned name.
+- An unknown herb or ore is learned only while its name is still on the tooltip under the cursor. A name hovered earlier (a player on the minimap, a campfire) can no longer be saved as the node a later cast gathered.
+
+### Added
+
+- `/gst forget <name>` removes a wrongly learned node and its observations, so the name stops being colored and suffixed.
+
 ## 2.1.8
 
 Re-checked against the current Forever client; no code change was needed.

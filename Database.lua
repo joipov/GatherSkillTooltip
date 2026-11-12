@@ -25,7 +25,7 @@ local defaults = {
 ns.defaults = defaults
 
 -- Bump when a one-time migration is added to MigrateDB.
-local DB_VERSION = 9
+local DB_VERSION = 10
 local MINIMAP_POS = 200
 
 local BANNER_FONT_MIN = 10
@@ -232,6 +232,40 @@ local function MigrateDB(db)
 		-- existing installs get the smaller default; other sizes stay.
 		if db.bannerFont == 20 then
 			db.bannerFont = 18
+		end
+	end
+	if version < 10 then
+		-- Built-in nodes now use the verified Forever requirements. A gain or
+		-- miss below a node's requirement can only come from a stale hover or
+		-- a misattributed gather; drop it so it cannot lower the requirement
+		-- or recolor the node. Custom nodes keep all of their observations.
+		if type(db.gather) == "table" and ns.NODES then
+			for key, obs in pairs(db.gather) do
+				local node = ns.NODES[key]
+				if type(node) == "table" and type(node.orange) == "number" and type(obs) == "table" then
+					local orange = node.orange
+					if type(obs.misses) == "table" then
+						for skill in pairs(obs.misses) do
+							if type(skill) == "number" and skill < orange then
+								obs.misses[skill] = nil
+							end
+						end
+					end
+					if type(obs.gains) == "table" then
+						for skill in pairs(obs.gains) do
+							if type(skill) == "number" and skill < orange then
+								obs.gains[skill] = nil
+							end
+						end
+					end
+					if type(obs.orangeSeen) == "number" and obs.orangeSeen < orange then
+						obs.orangeSeen = nil
+					end
+					if type(obs.gainedAt) == "number" and obs.gainedAt < orange then
+						obs.gainedAt = nil
+					end
+				end
+			end
 		end
 	end
 	db.version = DB_VERSION

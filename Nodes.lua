@@ -31,6 +31,19 @@ function ns.DifficultyColor(skill, node, orange)
 	return COLOR_PREFIX.grey
 end
 
+-- Decorated lines (colors, textures, or a skill suffix) are parsed on every
+-- minimap frame while the cursor rests on a pin. Their result depends only on
+-- LOOKUP, so remember it by raw text and forget the memo whenever a locale
+-- alias or custom node changes. Plain names stay uncached: a lookup is cheap.
+local parseCache = {}
+local parseCacheSize = 0
+local PARSE_CACHE_MAX = 256
+
+function ns.InvalidateNodeCache()
+	parseCache = {}
+	parseCacheSize = 0
+end
+
 -- Returns (name, node) for a known object name, or (nil, nil, cleaned) when
 -- the cleaned text is unknown, or nothing for empty input.
 function ns.ExactNode(text)
@@ -48,11 +61,20 @@ function ns.ExactNode(text)
 		end
 		return nil, nil, text
 	end
+	local cached = parseCache[text]
+	if cached then
+		return cached.name, cached.node, cached.cleaned
+	end
 	local cleaned = ns.NormalizeName(text)
 	if not cleaned or cleaned == "" then
 		return nil
 	end
 	local node = lookup[cleaned]
+	if parseCacheSize >= PARSE_CACHE_MAX then
+		ns.InvalidateNodeCache()
+	end
+	parseCacheSize = parseCacheSize + 1
+	parseCache[text] = { name = node and cleaned, node = node, cleaned = cleaned }
 	if node then
 		return cleaned, node
 	end
@@ -120,6 +142,11 @@ end
 -- gainedAt is the highest gain and is not used here. Returns a number, never
 -- a new table.
 function ns.EffectiveOrange(band, key)
+	-- Built-in nodes use the verified Forever table. Learned lowering is only
+	-- for names the table does not know (custom nodes and skinning bands).
+	if ns.NODES[key] then
+		return band.orange
+	end
 	local obs = GatherObs(key)
 	local seen = obs and obs.orangeSeen
 	if type(seen) ~= "number" or seen >= band.orange then
@@ -144,6 +171,11 @@ function ns.ColorFromRate(gains, misses)
 end
 
 function ns.ObservedColor(skill, band, orange, key)
+	-- A built-in node cannot be gathered below its verified requirement, so
+	-- learned observations must not turn that red into another color.
+	if ns.NODES[key] and skill < band.orange then
+		return COLOR_PREFIX.red
+	end
 	local color = ns.DifficultyColor(skill, band, orange)
 	local obs = GatherObs(key)
 	if not obs then
@@ -168,6 +200,13 @@ end
 function ns.NoteGatherResult(key, skill, gained)
 	local db = ns.db
 	if not db or not key or type(skill) ~= "number" then
+		return
+	end
+	-- Observations below a built-in node's verified requirement cannot be real
+	-- for that node (a stale hover or a misattributed gather). Ignore them so
+	-- they cannot lower the requirement or recolor the node.
+	local builtin = ns.NODES[key]
+	if builtin and type(builtin.orange) == "number" and skill < builtin.orange then
 		return
 	end
 	local obs = db.gather[key]
@@ -223,6 +262,11 @@ function ns.RegisterCustomNode(name, entry)
 	if ns.NODES[name] then
 		return false
 	end
+	-- A unit name is never a node. This also keeps a stale custom node that
+	-- was learned from a player name from registering again on load.
+	if ns.UnitNameExists(name) then
+		return false
+	end
 	local lookup = ns.LOOKUP
 	if not lookup then
 		return false
@@ -246,6 +290,7 @@ function ns.RegisterCustomNode(name, entry)
 		prof = entry.prof,
 		key = (type(entry.key) == "string" and entry.key ~= "" and entry.key) or name,
 	}
+	ns.InvalidateNodeCache()
 	return true
 end
 
@@ -258,6 +303,48 @@ function ns.ApplyCustomNodes(customNodes)
 	for name, entry in pairs(customNodes) do
 		ns.RegisterCustomNode(name, entry)
 	end
+end
+
+-- Removes a learned node by name (case-insensitive) and its gather
+-- observations. Built-in names and locale aliases are never removed.
+-- Returns the stored name when something was removed.
+function ns.ForgetCustomNode(name)
+	if type(name) ~= "string" then
+		return nil
+	end
+	local wanted = name:match("^%s*(.-)%s*$")
+	if wanted == "" then
+		return nil
+	end
+	local db = ns.db
+	if not db or type(db.customNodes) ~= "table" then
+		return nil
+	end
+	local lower = wanted:lower()
+	local key
+	for candidate in pairs(db.customNodes) do
+		if type(candidate) == "string" and candidate:lower() == lower then
+			key = candidate
+			break
+		end
+	end
+	if not key then
+		return nil
+	end
+	if ns.NODES and ns.NODES[key] then
+		return nil
+	end
+	local node = ns.LOOKUP and ns.LOOKUP[key]
+	local aliased = node and ns.NODES and ns.NODES[node.key]
+	db.customNodes[key] = nil
+	if ns.LOOKUP and not aliased then
+		ns.LOOKUP[key] = nil
+	end
+	if type(db.gather) == "table" and not aliased then
+		db.gather[key] = nil
+	end
+	ns.InvalidateNodeCache()
+	return key
 end
 
 -- Persists a newly gathered unknown herb/ore and merges it into LOOKUP.
@@ -274,6 +361,9 @@ function ns.LearnCustomNode(name, prof, skill)
 		return false
 	end
 	if ns.NODES[name] then
+		return false
+	end
+	if ns.UnitNameExists(name) then
 		return false
 	end
 	local lookup = ns.LOOKUP

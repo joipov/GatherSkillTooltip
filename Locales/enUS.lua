@@ -92,4 +92,9 @@ function ns.RegisterLocale(strings, aliases)
 			display[enName] = locName
 		end
 	end
+	-- Locale files load before Nodes.lua, so this only has work when a caller
+	-- registers aliases later.
+	if ns.InvalidateNodeCache then
+		ns.InvalidateNodeCache()
+	end
 end

@@ -2,7 +2,7 @@
 
 -- LuaLS declarations for Blizzard globals that the Ketho "WoW API"
 -- Core annotations do not define. Only what this addon uses.
--- Runtime source for each entry: Forever client build 70009 UI code
+-- Runtime source for each entry: Forever client build 70862 UI code
 -- (Blizzard_SharedXML/Tooltip/TooltipDataHandler.lua, Blizzard_Settings*).
 
 ---@class TooltipDataProcessor
