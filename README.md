@@ -1,7 +1,7 @@
 # Gather Skill Tooltip
 
 Shows your gathering skill and the skill a node requires when you hover a
-herb or ore (in the world or on a minimap pin), and puts your Skinning skill
+herb or ore in the world, and puts your Skinning skill
 beside the level of a creature you can skin. Knows the Wowhead Forever herb
 and ore requirements, and learns unknown Forever herb and ore names, plus
 which NPCs are skinnable, from play.
@@ -10,9 +10,8 @@ Target client: World of Warcraft **Forever**, release client (`_forever_`, `## I
 
 ## Features
 
-- Herb and ore tooltips: `Peacebloom (70/1)`, colored red/orange/yellow/green/grey
-  by difficulty. Stacked minimap pins are handled line by line, including the
-  client's `|n` line break.
+- Herb and ore tooltips in the world: `Peacebloom (70/1)`, colored red/orange/yellow/green/grey
+  by difficulty. Minimap pins no longer show the skill: the yellow-dot name is a secret value.
 - Requirements checked against the Wowhead Forever object database (Herbs and
   Mining lists) on 2026-11-10.
 - Skinning: `Level 12 (Skinning 100/20)` on creatures you can skin. NPC ids are
@@ -98,11 +97,11 @@ version from the TOC and the manual changelog from `CHANGELOG.md`.
 
 ## Verifying in-game
 
-- Hover Peacebloom / Copper Vein in the world and on the minimap; check
-  stacked pins and an unknown object (no rewrite; `/gst debug` prints it).
+- Hover Peacebloom / Copper Vein in the world, and an unknown object (no rewrite; `/gst debug` prints it).
+  A yellow dot shows the game's name only.
 - Hover the guild roster, a party/raid frame, a bag item, an action-bar button,
   and a unit frame: no node rewrite and no skinning line. World herb/ore and
-  unit tooltips and minimap pins still rewrite.
+  unit tooltips still rewrite.
 - Skinning: living beast (no line), your own unlooted dead beast (no "cannot
   skin" learned), looted skinnable (line, learned), humanoid (no line).
 - Toggle Find Herbs / Find Minerals and use the warning's own text buttons;

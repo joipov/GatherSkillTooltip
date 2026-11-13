@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.2.4
+
+Minimap herb and ore names are secret on this client, so a yellow dot no longer shows the skill.
+
+### Known
+
+- The addon cannot read that name, and the minimap tooltip will not keep a skill line written onto it. A fix is being worked on and may not be possible. A herb or ore in the world, and skinning, still show the skill.
+
 ## 2.2.3
 
 ### Fixed

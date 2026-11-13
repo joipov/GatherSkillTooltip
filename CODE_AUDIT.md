@@ -10,6 +10,10 @@ requirements checked against Wowhead Forever on 2026-11-10.
 
 This note is for development. It is not shipped in the addon zip.
 
+## Known in 2.2.4
+
+Minimap herb and ore names are secret values. The addon cannot read them, and the yellow-dot tooltip will not keep a skill line. World nodes and skinning still use normal text. No experiment for that pin is in this tree.
+
 ## What changed in 2.2.3
 
 - Node rewriting now checks the tooltip owner (`GameTooltip:GetOwner`). A

@@ -1,5 +1,7 @@
 # Gather Skill Tooltip
 
+<font color="#ff3333"><b>Minimap pins are broken.</b> Blizzard made the herb and ore name on a yellow dot a secret value. The addon can no longer read that name, and the minimap tooltip will not keep a skill line written onto it. A fix is being worked on, and it may not be possible. A herb or ore in the world, and skinning, still show the skill.</font>
+
 For World of Warcraft: Forever (Classic Plus).
 
 **Forever is still changing. The addon starts from the Wowhead Forever herb and ore requirements plus the usual skinning formula, then learns names that are not in the table from play and remembers them.**
@@ -8,7 +10,7 @@ For World of Warcraft: Forever (Classic Plus).
 
 **Lightweight and unobtrusive.** It only changes the tooltips you already hover, draws nothing on the minimap, and leaves the yellow gather dots alone. There is no permanent frame loop.
 
-Hover a herb or ore and the tooltip shows your skill and the skill required, for example **Mageroyal (42/50)**. That works on a minimap pin and on the node in the world.
+Hover a herb or ore and the tooltip shows your skill and the skill required, for example **Mageroyal (42/50)**. That works on the node in the world. Minimap pins no longer show the skill.
 
 Hover a beast or dragonkin and the same numbers sit beside its level, for example **Level 16 (Skinning 42/60) Boar**, including the corpse. Only if you have Skinning. Critters, pets, and friendly creatures are left alone until learned otherwise. Beast dots on the minimap stay as they are.
 
