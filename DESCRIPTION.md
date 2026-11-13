@@ -1,6 +1,6 @@
 # Gather Skill Tooltip
 
-<font color="#ff3333"><b>Minimap pins are broken.</b> Blizzard made the herb and ore name on a yellow dot a secret value. The addon can no longer read that name, and the minimap tooltip will not keep a skill line written onto it. A fix is being worked on, and it may not be possible. A herb or ore in the world, and skinning, still show the skill.</font>
+<p style="color:#ff3333"><strong>Minimap pins are broken.</strong> Blizzard made the herb and ore name on a yellow dot a secret value. The addon can no longer read that name, and the minimap tooltip will not keep a skill line written onto it. A fix is being worked on, and it may not be possible. A herb or ore in the world, and skinning, still show the skill.</p>
 
 For World of Warcraft: Forever (Classic Plus).
 
