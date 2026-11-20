@@ -10,6 +10,24 @@ requirements checked against Wowhead Forever on 2026-11-10.
 
 This note is for development. It is not shipped in the addon zip.
 
+## What changed in 2.3.0
+
+- The yellow-dot name is a secret value in the open world and out of combat (reported by other addon authors from build 70938; nothing is documented). The MinimapMouseover tooltip data carries no `id` or `guid`, so the pin cannot be identified. The object-id table from the unreleased 2.2.5 work is removed.
+- `NodeList.lua` adds the minimap list: while a pin with a secret name is hovered (`ns.PinNameHidden`), a frame lists the herbs and ores around the player's skill. Rows, windowing and row text are pure functions covered by `tests/run.lua`. The frame is created on first use.
+- The list hides `LINGER_SECONDS` after the game's tooltip goes away, and stays while the cursor is over it. Its `OnUpdate` only runs while it is shown.
+- A pin whose name can be read still gets the skill on `GatherSkillTooltipPinTooltip`. `GameTooltip` is never rewritten for a pin.
+- Not verified in the client. The list cannot tell a herb or ore from any other dot with a secret name.
+
+In-game check:
+
+- [ ] Hover a yellow herb or ore dot: the game's tooltip is unchanged and the list appears left of the minimap, centered on the current skill, with difficulty colors.
+- [ ] Mouse wheel over the list scrolls it; the range in the header follows. With both professions, each section scrolls on its own.
+- [ ] Move the cursor away: the list hides after about 1.5 seconds. Move onto the list first: it stays.
+- [ ] `/gst list` shows the list with the drag hint; drag it, right-click to lock, `/reload`, hover a dot: it appears at the saved place.
+- [ ] Turn the list off in the settings: hovering a dot shows nothing extra. Reset puts it back beside the minimap.
+- [ ] Hover a dot in combat: the list still shows the last known skill, and no Lua error.
+- [ ] Hover a herb in the world, the guild roster, a bag and a unit frame. The world herb still rewrites. The UI tooltips do not.
+
 ## Known in 2.2.4
 
 Minimap herb and ore names are secret values. The addon cannot read them, and the yellow-dot tooltip will not keep a skill line. World nodes and skinning still use normal text. No experiment for that pin is in this tree.

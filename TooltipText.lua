@@ -224,10 +224,27 @@ function ns.TooltipOwnerIsWorld(tooltip)
 	end
 	-- The owner can be the minimap, one of its children (a pin) or the cluster
 	-- frame it lives in.
-	if Minimap and (ns.FrameIsUnder(owner, Minimap) or ns.FrameIsUnder(Minimap, owner)) then
+	if ns.TooltipOwnerIsMinimap(tooltip) then
 		return true
 	end
 	return false
+end
+
+-- True when the tooltip is anchored to the minimap or one of its children.
+-- Yellow-dot tooltips are rebuilt by the minimap every frame, so they are
+-- never rewritten in place.
+function ns.TooltipOwnerIsMinimap(tooltip)
+	if not tooltip or type(tooltip.GetOwner) ~= "function" or not Minimap then
+		return false
+	end
+	local owner = tooltip:GetOwner()
+	if not owner then
+		return false
+	end
+	if type(owner.IsForbidden) == "function" and owner:IsForbidden() then
+		return false
+	end
+	return ns.FrameIsUnder(owner, Minimap) or ns.FrameIsUnder(Minimap, owner)
 end
 
 -- True when a cleaned tooltip line is a unit token, such as a group member's

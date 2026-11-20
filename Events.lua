@@ -166,8 +166,18 @@ local function NodeTooltipContext(tooltip)
 	return false
 end
 
-TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.MinimapMouseover, ns.OnObjectTooltip)
+-- Yellow dots stay on the game's tooltip. A readable name gets the skill on a
+-- separate tooltip; a secret name brings up the node list. Rewriting
+-- GameTooltip here is what the minimap's per-frame rebuild turns into a
+-- second box.
+TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.MinimapMouseover, function(tooltip, data)
+	if tooltip ~= GameTooltip then
+		return
+	end
+	ns.OnMinimapPin(tooltip, data)
+end)
 TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Object, function(tooltip, data)
+	ns.EndNodeListHover()
 	if NodeTooltipContext(tooltip) then
 		ns.OnObjectTooltip(tooltip, data)
 	end
@@ -202,6 +212,12 @@ do
 
 	local function FallbackApply(tooltip, data)
 		stats.checked = stats.checked + 1
+		-- An untyped minimap tooltip still must not be rewritten in place.
+		if ns.TooltipOwnerIsMinimap(tooltip) then
+			ns.OnMinimapPin(tooltip, data)
+			return
+		end
+		ns.EndNodeListHover()
 		if not NodeTooltipContext(tooltip) or ns.TooltipHasUnit(tooltip) then
 			stats.skipped = stats.skipped + 1
 			return

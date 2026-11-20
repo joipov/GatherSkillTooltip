@@ -10,8 +10,22 @@
 local root = (arg and arg[0] or "tests/run.lua"):match("^(.*)[/\\]tests[/\\]") or "."
 
 -- The few globals the loaded files bind at load time.
-issecretvalue = function() return false end
-canaccessvalue = function() return true end
+-- Strings and numbers marked in these tables are secret for one test, then cleared.
+local secretNumbers = {}
+local secretStrings = {}
+issecretvalue = function(value)
+	local kind = type(value)
+	if kind == "number" then
+		return secretNumbers[value] == true
+	end
+	if kind == "string" then
+		return secretStrings[value] == true
+	end
+	return false
+end
+canaccessvalue = function(value)
+	return not issecretvalue(value)
+end
 issecrettable = function() return false end
 canaccesstable = function() return true end
 C_Spell = {}
@@ -82,6 +96,7 @@ load("TooltipText.lua")
 load("Skills.lua")
 load("Nodes.lua")
 load("Tooltip.lua")
+load("NodeList.lua")
 load("Skinning.lua")
 load("Learning.lua")
 
@@ -674,6 +689,140 @@ test("stacked pins separated by |n are split and rewritten", function()
 	eq(store.text:find("Silverleaf", 1, true) ~= nil, true)
 	eq(store.text:find("\n", 1, true) ~= nil, true)
 	eq((store.shows or 0) > 0, true, "the tooltip reflows after a rewrite")
+end)
+
+local function pinKeys(raw)
+	local found = ns.PinNodes(raw)
+	local keys = {}
+	for i = 1, #found do
+		keys[i] = found[i].node.key
+	end
+	return table.concat(keys, ","), #found
+end
+
+test("minimap pin identity uses a readable name", function()
+	local keys, count = pinKeys("Peacebloom")
+	eq(count, 1)
+	eq(keys, "Peacebloom")
+	keys, count = pinKeys("Peacebloom|nSilverleaf")
+	eq(count, 2)
+	eq(keys, "Peacebloom,Silverleaf")
+	keys, count = pinKeys("player")
+	eq(count, 0, "a unit name is not a node")
+	eq(keys, "")
+end)
+
+test("a secret pin name identifies nothing and is reported as hidden", function()
+	secretStrings["hidden-herb"] = true
+	local _, count = pinKeys("hidden-herb")
+	local fromData = ns.PinNameHidden(fakeTip("Peacebloom"), { lines = { { leftText = "hidden-herb" } } })
+	local fromFontString = ns.PinNameHidden(fakeTip("hidden-herb"), nil)
+	secretStrings["hidden-herb"] = nil
+	eq(count, 0)
+	eq(fromData, true, "secret tooltip data")
+	eq(fromFontString, true, "secret font string text")
+	eq(ns.PinNameHidden(fakeTip("Peacebloom"), { lines = { { leftText = "Peacebloom" } } }), false)
+	eq(ns.PinNameHidden(fakeTip("Peacebloom"), nil), false)
+end)
+
+-- NodeList.lua -----------------------------------------------------------------------
+
+test("ClampListRows keeps the row count between 5 and 25", function()
+	eq(ns.ClampListRows(nil), 12)
+	eq(ns.ClampListRows(2), 5)
+	eq(ns.ClampListRows(40), 25)
+	eq(ns.ClampListRows(9.6), 10)
+end)
+
+test("NodeListRows lists one profession sorted by requirement", function()
+	freshDB()
+	local rows = ns.NodeListRows("herb")
+	eq(#rows > 30, true)
+	local names = {}
+	for i = 1, #rows do
+		eq(rows[i].node.prof, "herb")
+		if i > 1 then
+			eq(rows[i - 1].orange <= rows[i].orange, true, "sorted by requirement")
+		end
+		names[rows[i].name] = (names[rows[i].name] or 0) + 1
+	end
+	eq(names["Friedensblume"], 1, "the client-language name")
+	eq(names["Wilted Peacebloom"], nil, "variants sharing a band are one row")
+	eq(names["Copper Vein"], nil, "ores stay out of the herb list")
+	local ores = ns.NodeListRows("mine")
+	local copper = 0
+	for i = 1, #ores do
+		if ores[i].key == "Copper Vein" then
+			copper = copper + 1
+		end
+	end
+	eq(copper, 1)
+end)
+
+test("NodeListRows includes a learned node", function()
+	freshDB()
+	eq(ns.LearnCustomNode("Hive Thistle", "herb", 140), true)
+	local rows = ns.NodeListRows("herb")
+	local found
+	for i = 1, #rows do
+		if rows[i].name == "Hive Thistle" then
+			found = rows[i]
+		end
+	end
+	eq(found ~= nil, true)
+	eq(found.orange, 140)
+	ns.ForgetCustomNode("Hive Thistle")
+end)
+
+test("NodeListStart centers on the player's skill and clamps scrolling", function()
+	local rows = {}
+	for i = 1, 20 do
+		rows[i] = { orange = i * 10 }
+	end
+	-- Skill 100 reaches row 10; a window of 8 shows rows 7 to 14.
+	local start, lastStart = ns.NodeListStart(rows, 100, 8)
+	eq(start, 7)
+	eq(lastStart, 13)
+	eq(ns.NodeListStart(rows, 1, 8), 1, "nothing reachable starts at the top")
+	eq(ns.NodeListStart(rows, 999, 8), 13, "everything reachable ends at the bottom")
+	eq(ns.NodeListStart(rows, 100, 8, 3), 3, "a scrolled position is kept")
+	eq(ns.NodeListStart(rows, 100, 8, -4), 1)
+	eq(ns.NodeListStart(rows, 100, 8, 99), 13)
+	start, lastStart = ns.NodeListStart({ rows[1], rows[2] }, 100, 8)
+	eq(start, 1)
+	eq(lastStart, 1, "a short list does not scroll")
+end)
+
+test("NodeListRowText colors a row by difficulty", function()
+	local db = freshDB()
+	local node = ns.NODES["Kingsblood"]
+	local row = { key = "Kingsblood", name = "Kingsblood", node = node, orange = 125 }
+	local name, required = ns.NodeListRowText(row, 100)
+	eq(name, P.red .. "Kingsblood|r")
+	eq(required, P.red .. "125|r")
+	name = ns.NodeListRowText(row, 130)
+	eq(name, P.orange .. "Kingsblood|r")
+	name = ns.NodeListRowText(row, 400)
+	eq(name, P.grey .. "Kingsblood|r")
+	db.color = false
+	name, required = ns.NodeListRowText(row, 100)
+	eq(name, "Kingsblood")
+	eq(required, "125")
+end)
+
+test("the list position and row count survive a load only when valid", function()
+	local db = ns.LoadDB({ listX = 100, listY = 500, listRows = 99, listUnlocked = true })
+	eq(db.listX, 100)
+	eq(db.listY, 500)
+	eq(db.listRows, 25)
+	eq(db.listUnlocked, false, "the unlock is session-only")
+	db = ns.LoadDB({ listX = 100, listY = "top" })
+	eq(db.listX, nil)
+	eq(db.listY, nil)
+	db = ns.LoadDB({ listX = 100, listY = 500, showList = false })
+	ns.ResetSettings(db)
+	eq(db.listX, nil, "reset puts the list back beside the minimap")
+	eq(db.showList, true)
 end)
 
 test("TooltipShowsNode matches locale aliases to the same key", function()

@@ -11,7 +11,9 @@ Target client: World of Warcraft **Forever**, release client (`_forever_`, `## I
 ## Features
 
 - Herb and ore tooltips in the world: `Peacebloom (70/1)`, colored red/orange/yellow/green/grey
-  by difficulty. Minimap pins no longer show the skill: the yellow-dot name is a secret value.
+  by difficulty. The game hides a yellow minimap dot's name from addons, so hovering one
+  brings up a list of the herbs and ores around your skill with their requirements. The list
+  scrolls with the mouse wheel and can be moved (`/gst list`). The game's tooltip is not rewritten.
 - Requirements checked against the Wowhead Forever object database (Herbs and
   Mining lists) on 2026-11-10.
 - Skinning: `Level 12 (Skinning 100/20)` on creatures you can skin. NPC ids are
@@ -34,6 +36,7 @@ Target client: World of Warcraft **Forever**, release client (`_forever_`, `## I
 | Command | Effect |
 | --- | --- |
 | `/gst`, `/gatherskilltooltip` | Open the settings panel |
+| `/gst list` | Show the minimap list so you can drag it; right-click it to lock |
 | `/gst reset` | Reset settings to default. Learned herbs, ores, and skinning stay |
 | `/gst forget <name>` | Remove a wrongly learned herb or ore name and its observations |
 | `/gst debug` | Toggle debug output (unmatched tooltip names, learning traces) |
@@ -98,7 +101,8 @@ version from the TOC and the manual changelog from `CHANGELOG.md`.
 ## Verifying in-game
 
 - Hover Peacebloom / Copper Vein in the world, and an unknown object (no rewrite; `/gst debug` prints it).
-  A yellow dot shows the game's name only.
+  Hover a yellow dot: the game's tooltip is unchanged and the list appears beside the minimap, centered
+  on your skill. Scroll it, move the cursor away (it hides after a moment), and drag it with `/gst list`.
 - Hover the guild roster, a party/raid frame, a bag item, an action-bar button,
   and a unit frame: no node rewrite and no skinning line. World herb/ore and
   unit tooltips still rewrite.

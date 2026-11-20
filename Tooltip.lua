@@ -1,8 +1,12 @@
 local _, ns = ...
 
--- Object and minimap-pin tooltips: rewrite the first line with the player's
--- skill and the node's requirement, and remember the hovered node so a
--- following gather cast can be attributed to it.
+-- World object tooltips: rewrite the first line with the player's skill and
+-- the node's requirement. Minimap pins are not rewritten: the minimap rebuilds
+-- GameTooltip every frame. A pin whose name can be read gets the skill on a
+-- separate tooltip. On this client the name is a secret value, so the pin
+-- cannot be identified and the node list (NodeList.lua) is shown instead.
+-- A readable hover is remembered so a following gather cast can be attributed
+-- to it.
 
 local GetTime = GetTime
 
@@ -133,6 +137,184 @@ end
 
 function ns.ForgetUnknownName()
 	ForgetUnknown()
+end
+
+local function AddPinNode(into, seen, name, node, cleaned)
+	if not node or seen[node] then
+		return
+	end
+	if ns.UnitNameExists(cleaned or name) then
+		return
+	end
+	seen[node] = true
+	into[#into + 1] = { name = name, node = node }
+end
+
+local function AddPinText(into, seen, text)
+	if not ReadableString(text) then
+		return
+	end
+	if text:find("|n", 1, true) then
+		text = text:gsub("|n", "\n")
+	end
+	local function one(line)
+		local name, node, cleaned = ns.ExactNode(line)
+		AddPinNode(into, seen, name, node, cleaned)
+	end
+	if not text:find("\n", 1, true) then
+		one(text)
+		return
+	end
+	for line in (text .. "\n"):gmatch("(.-)\n") do
+		one(line)
+	end
+end
+
+-- Nodes named by a minimap pin whose name can be read, including a stack
+-- separated by newlines. A secret name names nothing: it is never read, and
+-- the pin's tooltip data carries no id that could stand in for it.
+function ns.PinNodes(raw)
+	local found = {}
+	if ReadableString(raw) then
+		AddPinText(found, {}, raw)
+	end
+	return found
+end
+
+-- True when the pin's name is a secret value: something is under the cursor,
+-- but the addon cannot tell what.
+function ns.PinNameHidden(tooltip, data)
+	if ns.CanIndex(data) and ns.CanIndex(data.lines) then
+		local line = data.lines[1]
+		if ns.CanIndex(line) and SecretBlocked(line.leftText) then
+			return true
+		end
+	end
+	local fs = tooltip and ns.FontStringByIndex(tooltip, 1)
+	if fs and SecretBlocked(fs:GetText()) then
+		return true
+	end
+	return false
+end
+
+-- Skill lines for an identified pin. Empty when the profession is off or the
+-- player has no skill to show.
+function ns.PinLines(found)
+	local lines = {}
+	local db = ns.db
+	if not db or type(found) ~= "table" then
+		return lines
+	end
+	for i = 1, #found do
+		local entry = found[i]
+		local title, prefix = ns.FormatNode(entry.name, entry.node)
+		if title then
+			if db.color then
+				title = ns.ColorWrap(title, prefix)
+			end
+			lines[#lines + 1] = title
+		end
+	end
+	return lines
+end
+
+local pinTip
+
+local function HidePinTooltip()
+	if pinTip then
+		pinTip:Hide()
+		pinTip.gstSig = nil
+	end
+end
+
+local function PinTooltip()
+	if pinTip then
+		return pinTip
+	end
+	pinTip = CreateFrame("GameTooltip", "GatherSkillTooltipPinTooltip", UIParent, "GameTooltipTemplate")
+	pinTip:SetFrameStrata("TOOLTIP")
+	pinTip:SetClampedToScreen(true)
+	if GameTooltip and GameTooltip.HookScript then
+		GameTooltip:HookScript("OnHide", function()
+			HidePinTooltip()
+		end)
+	end
+	return pinTip
+end
+
+local function ShowPinLines(lines)
+	local tip = PinTooltip()
+	local signature = table.concat(lines, "\n")
+	if not tip:IsShown() or tip.gstSig ~= signature then
+		tip.gstSig = signature
+		tip:SetOwner(UIParent, "ANCHOR_NONE")
+		tip:ClearLines()
+		for i = 1, #lines do
+			tip:AddLine(lines[i], 1, 1, 1)
+		end
+	end
+	tip:ClearAllPoints()
+	tip:SetPoint("TOPLEFT", GameTooltip, "TOPRIGHT", 4, 0)
+	tip:Show()
+end
+
+-- Minimap pins only. GameTooltip is left as the game drew it. A readable name
+-- gets the skill on a second tooltip; a secret name brings up the node list.
+function ns.OnMinimapPin(tooltip, data)
+	if not tooltip or tooltip ~= GameTooltip then
+		return
+	end
+	local db = ns.db
+	if not db or not db.enabled then
+		HidePinTooltip()
+		ns.HideNodeList()
+		return
+	end
+	local raw = ns.FirstLine(tooltip, data)
+	if not raw then
+		HidePinTooltip()
+		if ns.PinNameHidden(tooltip, data) then
+			-- An unreadable pin is not the node hovered earlier.
+			ForgetNode()
+			ForgetUnknown()
+			ns.ShowNodeList()
+		else
+			ns.EndNodeListHover()
+		end
+		return
+	end
+	ns.EndNodeListHover()
+	local found = ns.PinNodes(raw)
+	if #found == 1 then
+		RememberNode(found[1].node)
+		ForgetUnknown()
+	elseif #found > 1 then
+		ForgetNode()
+		ForgetUnknown()
+	else
+		local text = raw
+		if text:find("|n", 1, true) then
+			text = text:gsub("|n", "\n")
+		end
+		if text:find("\n", 1, true) then
+			ForgetNode()
+			ForgetUnknown()
+		else
+			local _, _, cleaned = ns.ExactNode(text)
+			if cleaned then
+				RememberUnknown(cleaned)
+			else
+				ForgetUnknown()
+			end
+			ForgetNode()
+		end
+	end
+	local lines = ns.PinLines(found)
+	if #lines == 0 then
+		HidePinTooltip()
+		return
+	end
+	ShowPinLines(lines)
 end
 
 -- `trackNode` is true only for Object and MinimapMouseover tooltips, where

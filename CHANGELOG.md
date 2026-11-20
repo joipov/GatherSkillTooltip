@@ -1,5 +1,23 @@
 # Changelog
 
+## 2.3.0
+
+Hovering a yellow minimap dot brings up a list of the herbs and ores around your skill.
+
+### Added
+
+- The minimap list. The game hides a yellow dot's name from addons, so the dot cannot be identified. While you hover one, a list beside the minimap shows the herbs and ores around your skill, each with its required skill and difficulty color. Read the name on the game's tooltip and find it in the list. The list is plain text, with no background or border.
+- The list shows 12 rows per profession (5 to 25 in the settings), highest requirement at the top, and scrolls with the mouse wheel. It stays for a moment after the hover ends, and while the cursor is over it, so you can reach it.
+- **Unlock list position** in the settings, or `/gst list`, shows the list so you can drag it. Right-click it to lock. Reset puts it back beside the minimap.
+
+### Changed
+
+- The game's yellow-dot tooltip is never rewritten. If a dot's name can be read, the skill still appears on a second tooltip beside it.
+
+### Known
+
+- The list also appears on other minimap dots whose name is hidden. The addon cannot tell them from a herb or ore.
+
 ## 2.2.4
 
 Minimap herb and ore names are secret on this client, so a yellow dot no longer shows the skill.
