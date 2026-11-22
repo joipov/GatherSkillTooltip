@@ -132,17 +132,17 @@ eventFrame:RegisterEvent("ADDON_LOADED")
 
 -- Tooltip post-calls ---------------------------------------------------------------
 
--- Node tooltips belong to the world and to minimap pins. Anything owned by a
--- UI frame (the guild roster, bags, action bars, unit frames, chat links) must
+-- Node tooltips belong to the world. Anything owned by a UI frame (the guild
+-- roster, bags, action bars, unit frames, chat links) or by the minimap must
 -- never be rewritten, even when its first line equals a learned node name.
 -- The client's mouse-focus API is GetMouseFoci; over the open world the list
 -- may be empty, which also counts as world. Click-through overlays propagate
 -- input and do not take the tooltip away from the world.
 local function NodeTooltipContext(tooltip)
 	-- The tooltip owner is the frame the tooltip is anchored to. The client's
-	-- own world objects and minimap pins use UIParent/WorldFrame (or a frame
-	-- under the minimap); the guild roster, party/raid frames, bags and action
-	-- bars use themselves, so their text is never rewritten.
+	-- own world objects use UIParent or WorldFrame. The guild roster,
+	-- party/raid frames, bags, action bars, and the minimap use themselves,
+	-- so their text is never rewritten.
 	if not ns.TooltipOwnerIsWorld(tooltip) then
 		return false
 	end
@@ -154,8 +154,9 @@ local function NodeTooltipContext(tooltip)
 	if not focus or focus == WorldFrame then
 		return true
 	end
+	-- A yellow dot sits on the minimap. Its name is hidden, so leave it.
 	if Minimap and ns.FrameIsUnder(focus, Minimap) then
-		return true
+		return false
 	end
 	if focus.CanPropagateMouseMotion and focus:CanPropagateMouseMotion() then
 		return true
@@ -166,18 +167,7 @@ local function NodeTooltipContext(tooltip)
 	return false
 end
 
--- Yellow dots stay on the game's tooltip. A readable name gets the skill on a
--- separate tooltip; a secret name brings up the node list. Rewriting
--- GameTooltip here is what the minimap's per-frame rebuild turns into a
--- second box.
-TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.MinimapMouseover, function(tooltip, data)
-	if tooltip ~= GameTooltip then
-		return
-	end
-	ns.OnMinimapPin(tooltip, data)
-end)
 TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Object, function(tooltip, data)
-	ns.EndNodeListHover()
 	if NodeTooltipContext(tooltip) then
 		ns.OnObjectTooltip(tooltip, data)
 	end
@@ -188,9 +178,9 @@ TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Unit, ns.OnUnitTool
 TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Corpse, ns.OnUnitTooltip)
 
 -- Fallback for GameTooltip shows that carry no tooltip data. Typed
--- tooltips (Object, MinimapMouseover, Unit,...) are handled by the post-calls
--- above. This only runs while the cursor is over the world: UI tooltips (the
--- guild roster, bags, action bars) are skipped, so they are never rewritten.
+-- tooltips (Object, Unit, ...) are handled by the post-calls above. This only
+-- runs while the cursor is over the world: UI tooltips (the guild roster,
+-- bags, action bars) and the minimap are skipped, so they are never rewritten.
 -- It is instrumented: `/gst stats` reports shown/checked/applied/skipped.
 ns.fallbackStats = { shown = 0, checked = 0, applied = 0, skipped = 0, retried = 0 }
 do
@@ -212,13 +202,8 @@ do
 
 	local function FallbackApply(tooltip, data)
 		stats.checked = stats.checked + 1
-		-- An untyped minimap tooltip still must not be rewritten in place.
-		if ns.TooltipOwnerIsMinimap(tooltip) then
-			ns.OnMinimapPin(tooltip, data)
-			return
-		end
-		ns.EndNodeListHover()
-		if not NodeTooltipContext(tooltip) or ns.TooltipHasUnit(tooltip) then
+		-- An untyped minimap tooltip is left as the game drew it.
+		if ns.TooltipOwnerIsMinimap(tooltip) or not NodeTooltipContext(tooltip) or ns.TooltipHasUnit(tooltip) then
 			stats.skipped = stats.skipped + 1
 			return
 		end

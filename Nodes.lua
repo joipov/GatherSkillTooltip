@@ -31,10 +31,10 @@ function ns.DifficultyColor(skill, node, orange)
 	return COLOR_PREFIX.grey
 end
 
--- Decorated lines (colors, textures, or a skill suffix) are parsed on every
--- minimap frame while the cursor rests on a pin. Their result depends only on
--- LOOKUP, so remember it by raw text and forget the memo whenever a locale
--- alias or custom node changes. Plain names stay uncached: a lookup is cheap.
+-- Decorated lines (colors, textures, or a skill suffix) are parsed when a
+-- world tooltip is rewritten. Their result depends only on LOOKUP, so
+-- remember it by raw text and forget the memo whenever a locale alias or
+-- custom node changes. Plain names stay uncached: a lookup is cheap.
 local parseCache = {}
 local parseCacheSize = 0
 local PARSE_CACHE_MAX = 256

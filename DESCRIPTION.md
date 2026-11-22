@@ -1,8 +1,6 @@
 # Gather Skill Tooltip
 
-**Gather Skill Tooltip will be archived on CurseForge and Wago on 1 December 2026.** Blizzard changed the text on a minimap dot so those strings are secret values while you hover it. No fix was found for that, so the addon is being discontinued.
-
-A herb or ore in the world, and skinning, show the skill on the tooltip itself. The game hides a yellow dot's name from addons, so the addon cannot tell which herb or ore it is. While you hover one, a list of the herbs and ores around your skill appears beside the minimap, with the skill each requires and its difficulty color.
+A herb or ore in the world, and skinning, show the skill on the tooltip itself. Yellow dots on the minimap are left alone. The game hides those names from addons, so the addon cannot tell which herb or ore a dot is.
 
 For World of Warcraft: Forever (Classic Plus).
 
@@ -10,9 +8,9 @@ For World of Warcraft: Forever (Classic Plus).
 
 ![Gather Skill Tooltip showing Mageroyal (42/50)](https://media.forgecdn.net/attachments/1965/123/260921_1616_37_806-helvetyscreenshot_crop-png.png)
 
-**Lightweight and unobtrusive.** It draws nothing on the minimap and leaves the yellow-dot name alone. The list is only on screen while you hover a dot. There is no permanent frame loop.
+**Lightweight and unobtrusive.** It draws nothing on the minimap and leaves the yellow-dot name alone. There is no permanent frame loop.
 
-Hover a herb or ore and the tooltip shows your skill and the skill required, for example **Mageroyal (42/50)**. That works on the node in the world. On a yellow dot, read the name and find it in the list that appears beside the minimap. The list scrolls with the mouse wheel, and `/gst list` lets you drag it anywhere.
+Hover a herb or ore in the world and the tooltip shows your skill and the skill required, for example **Mageroyal (42/50)**.
 
 Hover a beast or dragonkin and the same numbers sit beside its level, for example **Level 16 (Skinning 42/60) Boar**, including the corpse. Only if you have Skinning. Critters, pets, and friendly creatures are left alone until learned otherwise. Beast dots on the minimap stay as they are.
 

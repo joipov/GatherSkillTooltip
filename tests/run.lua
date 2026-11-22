@@ -96,7 +96,6 @@ load("TooltipText.lua")
 load("Skills.lua")
 load("Nodes.lua")
 load("Tooltip.lua")
-load("NodeList.lua")
 load("Skinning.lua")
 load("Learning.lua")
 
@@ -676,10 +675,10 @@ test("TooltipShowsName sees names through colors, our suffix and stacks", functi
 	local stacked = fakeTip("Peacebloom")
 	stacked.TextLeft2 = { GetText = function() return "Silverleaf" end }
 	stacked.NumLines = function() return 2 end
-	eq(ns.TooltipShowsName(stacked, "Silverleaf"), true, "stacked pins")
+	eq(ns.TooltipShowsName(stacked, "Silverleaf"), true, "several names")
 end)
 
-test("stacked pins separated by |n are split and rewritten", function()
+test("a first line with several names separated by |n is split and rewritten", function()
 	freshDB()
 	ns.RefreshSkills()
 	local store = {}
@@ -691,138 +690,26 @@ test("stacked pins separated by |n are split and rewritten", function()
 	eq((store.shows or 0) > 0, true, "the tooltip reflows after a rewrite")
 end)
 
-local function pinKeys(raw)
-	local found = ns.PinNodes(raw)
-	local keys = {}
-	for i = 1, #found do
-		keys[i] = found[i].node.key
-	end
-	return table.concat(keys, ","), #found
-end
-
-test("minimap pin identity uses a readable name", function()
-	local keys, count = pinKeys("Peacebloom")
-	eq(count, 1)
-	eq(keys, "Peacebloom")
-	keys, count = pinKeys("Peacebloom|nSilverleaf")
-	eq(count, 2)
-	eq(keys, "Peacebloom,Silverleaf")
-	keys, count = pinKeys("player")
-	eq(count, 0, "a unit name is not a node")
-	eq(keys, "")
-end)
-
-test("a secret pin name identifies nothing and is reported as hidden", function()
-	secretStrings["hidden-herb"] = true
-	local _, count = pinKeys("hidden-herb")
-	local fromData = ns.PinNameHidden(fakeTip("Peacebloom"), { lines = { { leftText = "hidden-herb" } } })
-	local fromFontString = ns.PinNameHidden(fakeTip("hidden-herb"), nil)
-	secretStrings["hidden-herb"] = nil
-	eq(count, 0)
-	eq(fromData, true, "secret tooltip data")
-	eq(fromFontString, true, "secret font string text")
-	eq(ns.PinNameHidden(fakeTip("Peacebloom"), { lines = { { leftText = "Peacebloom" } } }), false)
-	eq(ns.PinNameHidden(fakeTip("Peacebloom"), nil), false)
-end)
-
--- NodeList.lua -----------------------------------------------------------------------
-
-test("ClampListRows keeps the row count between 5 and 25", function()
-	eq(ns.ClampListRows(nil), 12)
-	eq(ns.ClampListRows(2), 5)
-	eq(ns.ClampListRows(40), 25)
-	eq(ns.ClampListRows(9.6), 10)
-end)
-
-test("NodeListRows lists one profession sorted by requirement", function()
-	freshDB()
-	local rows = ns.NodeListRows("herb")
-	eq(#rows > 30, true)
-	local names = {}
-	for i = 1, #rows do
-		eq(rows[i].node.prof, "herb")
-		if i > 1 then
-			eq(rows[i - 1].orange <= rows[i].orange, true, "sorted by requirement")
-		end
-		names[rows[i].name] = (names[rows[i].name] or 0) + 1
-	end
-	eq(names["Friedensblume"], 1, "the client-language name")
-	eq(names["Wilted Peacebloom"], nil, "variants sharing a band are one row")
-	eq(names["Copper Vein"], nil, "ores stay out of the herb list")
-	local ores = ns.NodeListRows("mine")
-	local copper = 0
-	for i = 1, #ores do
-		if ores[i].key == "Copper Vein" then
-			copper = copper + 1
-		end
-	end
-	eq(copper, 1)
-end)
-
-test("NodeListRows includes a learned node", function()
-	freshDB()
-	eq(ns.LearnCustomNode("Hive Thistle", "herb", 140), true)
-	local rows = ns.NodeListRows("herb")
-	local found
-	for i = 1, #rows do
-		if rows[i].name == "Hive Thistle" then
-			found = rows[i]
-		end
-	end
-	eq(found ~= nil, true)
-	eq(found.orange, 140)
-	ns.ForgetCustomNode("Hive Thistle")
-end)
-
-test("NodeListStart centers on the player's skill and clamps scrolling", function()
-	local rows = {}
-	for i = 1, 20 do
-		rows[i] = { orange = i * 10 }
-	end
-	-- Skill 100 reaches row 10; a window of 8 shows rows 7 to 14.
-	local start, lastStart = ns.NodeListStart(rows, 100, 8)
-	eq(start, 7)
-	eq(lastStart, 13)
-	eq(ns.NodeListStart(rows, 1, 8), 1, "nothing reachable starts at the top")
-	eq(ns.NodeListStart(rows, 999, 8), 13, "everything reachable ends at the bottom")
-	eq(ns.NodeListStart(rows, 100, 8, 3), 3, "a scrolled position is kept")
-	eq(ns.NodeListStart(rows, 100, 8, -4), 1)
-	eq(ns.NodeListStart(rows, 100, 8, 99), 13)
-	start, lastStart = ns.NodeListStart({ rows[1], rows[2] }, 100, 8)
-	eq(start, 1)
-	eq(lastStart, 1, "a short list does not scroll")
-end)
-
-test("NodeListRowText colors a row by difficulty", function()
-	local db = freshDB()
-	local node = ns.NODES["Kingsblood"]
-	local row = { key = "Kingsblood", name = "Kingsblood", node = node, orange = 125 }
-	local name, required = ns.NodeListRowText(row, 100)
-	eq(name, P.red .. "Kingsblood|r")
-	eq(required, P.red .. "125|r")
-	name = ns.NodeListRowText(row, 130)
-	eq(name, P.orange .. "Kingsblood|r")
-	name = ns.NodeListRowText(row, 400)
-	eq(name, P.grey .. "Kingsblood|r")
-	db.color = false
-	name, required = ns.NodeListRowText(row, 100)
-	eq(name, "Kingsblood")
-	eq(required, "125")
-end)
-
-test("the list position and row count survive a load only when valid", function()
-	local db = ns.LoadDB({ listX = 100, listY = 500, listRows = 99, listUnlocked = true })
-	eq(db.listX, 100)
-	eq(db.listY, 500)
-	eq(db.listRows, 25)
-	eq(db.listUnlocked, false, "the unlock is session-only")
-	db = ns.LoadDB({ listX = 100, listY = "top" })
+test("LoadDB drops the old minimap list options", function()
+	local db = ns.LoadDB({
+		listX = 100,
+		listY = 500,
+		listRows = 99,
+		listUnlocked = true,
+		showList = false,
+	})
 	eq(db.listX, nil)
 	eq(db.listY, nil)
-	db = ns.LoadDB({ listX = 100, listY = 500, showList = false })
+	eq(db.listRows, nil)
+	eq(db.listUnlocked, nil)
+	eq(db.showList, nil)
+	eq(db.version, ns.DB_VERSION)
+	db.showList = false
+	db.listX = 40
 	ns.ResetSettings(db)
-	eq(db.listX, nil, "reset puts the list back beside the minimap")
-	eq(db.showList, true)
+	eq(db.showList, nil, "reset does not bring the list back")
+	eq(db.listX, nil)
+	eq(db.showMinimapButton, true, "the settings button stays")
 end)
 
 test("TooltipShowsNode matches locale aliases to the same key", function()
@@ -869,11 +756,11 @@ test("TooltipOwnerIsWorld tells world and minimap from UI frames", function()
 	tip.GetOwner = function()
 		return minimap
 	end
-	eq(ns.TooltipOwnerIsWorld(tip), true, "the minimap is world")
+	eq(ns.TooltipOwnerIsWorld(tip), false, "the minimap is not a world tooltip")
 	tip.GetOwner = function()
 		return { GetParent = function() return minimap end }
 	end
-	eq(ns.TooltipOwnerIsWorld(tip), true, "a frame under the minimap is world")
+	eq(ns.TooltipOwnerIsWorld(tip), false, "a frame under the minimap is not a world tooltip")
 	tip.GetOwner = function()
 		return { IsForbidden = function() return true end }
 	end
@@ -901,6 +788,19 @@ test("a node tooltip owned by a UI frame is skipped", function()
 		return {}
 	end
 	eq(ns.OnObjectTooltip(tip, nil), false)
+end)
+
+test("a node tooltip owned by the minimap is skipped", function()
+	freshDB()
+	local minimap = {}
+	_G.Minimap = minimap
+	local tip = fakeTip("Peacebloom")
+	tip.GetOwner = function()
+		return minimap
+	end
+	eq(ns.OnObjectTooltip(tip, nil), false)
+	eq(ns.RecentNodeKey("herb"), nil, "a yellow dot is not remembered")
+	_G.Minimap = nil
 end)
 
 test("a unit tooltip owned by a UI frame is not skinned", function()

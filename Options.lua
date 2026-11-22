@@ -81,7 +81,6 @@ function ns.InitOptions()
 			if key == "enabled" or key == "bannerUnlocked" then
 				ns.ApplyBannerLayout()
 			end
-			ns.ApplyNodeListLayout()
 		end
 		setting:SetValueChangedCallback(OnChanged)
 		optionSettings[key] = setting
@@ -113,40 +112,6 @@ function ns.InitOptions()
 	local requiredCheckbox = AddCheckbox("showRequired", L.SHOW_REQUIRED, L.SHOW_REQUIRED_TIP:format(example))
 	local colorCheckbox = AddCheckbox("color", L.COLOR, L.COLOR_TIP)
 	local learnCheckbox = AddCheckbox("learnChat", L.LEARN_CHAT, L.LEARN_CHAT_TIP, false)
-
-	AddHeader(L.HEADER_LIST)
-	local listCheckbox = AddCheckbox("showList", L.SHOW_LIST, L.SHOW_LIST_TIP)
-	local listRowsSlider
-	if Settings.CreateSliderOptions and Settings.CreateSlider then
-		local rowsSetting = Settings.RegisterAddOnSetting(
-			category,
-			"GATHERSKILLTOOLTIP_LISTROWS",
-			"listRows",
-			ns.db,
-			Settings.VarType.Number,
-			L.LIST_ROWS,
-			ns.defaults.listRows
-		)
-		rowsSetting:SetValueChangedCallback(function()
-			ns.db.listRows = ns.ClampListRows(ns.db.listRows)
-			ns.ApplyNodeListLayout()
-		end)
-		optionSettings.listRows = rowsSetting
-		local rowsOpts = Settings.CreateSliderOptions(5, 25, 1)
-		if MinimalSliderWithSteppersMixin and MinimalSliderWithSteppersMixin.Label then
-			rowsOpts:SetLabelFormatter(MinimalSliderWithSteppersMixin.Label.Right, function(value)
-				return tostring(math.floor(value + 0.5))
-			end)
-		end
-		listRowsSlider = Settings.CreateSlider(category, rowsSetting, rowsOpts, L.LIST_ROWS_TIP)
-	end
-	local listUnlockCheckbox, listUnlockSetting = AddCheckbox(
-		"listUnlocked",
-		L.LIST_UNLOCK,
-		L.LIST_UNLOCK_TIP,
-		false
-	)
-	ns.listUnlockSetting = listUnlockSetting
 
 	AddHeader(L.HEADER_TRACKING)
 	local warnCheckbox = AddCheckbox(
@@ -217,8 +182,6 @@ function ns.InitOptions()
 		requiredCheckbox,
 		colorCheckbox,
 		learnCheckbox,
-		listCheckbox,
-		listUnlockCheckbox,
 		warnCheckbox,
 		bannerUnlockCheckbox,
 		trainCheckbox,
@@ -227,9 +190,6 @@ function ns.InitOptions()
 	end
 	if bannerFontSlider then
 		bannerFontSlider:SetParentInitializer(enabledCheckbox, MasterEnabled)
-	end
-	if listRowsSlider then
-		listRowsSlider:SetParentInitializer(enabledCheckbox, MasterEnabled)
 	end
 end
 
@@ -241,7 +201,7 @@ function ns.ResetAllSettings()
 	end
 	for key, setting in pairs(optionSettings) do
 		local value = defaults[key]
-		if key == "bannerUnlocked" or key == "listUnlocked" then
+		if key == "bannerUnlocked" then
 			value = false
 		end
 		if value ~= nil and setting:GetValue() ~= value then
@@ -251,7 +211,6 @@ function ns.ResetAllSettings()
 	ns.ResetSettings(db)
 	ns.UpdateMinimapButton()
 	ns.ApplyBannerLayout()
-	ns.ApplyNodeListLayout()
 	ns.QueueTrackingCheck()
 	ns.UpdateLootEvents()
 	if not db.warnTrain then
@@ -276,12 +235,8 @@ _G.SlashCmdList.GATHERSKILLTOOLTIP = function(msg)
 		end
 		return
 	end
-	if lower == "list" then
-		ns.ToggleNodeListUnlock()
-		return
-	end
 	if lower == "help" then
-		ns.Print("Type /gst to open settings. /gst list shows the minimap list so you can drag it. /gst reset resets settings. /gst forget <name> removes a learned node. /gst debug toggles debug output. /gst stats prints tooltip counters.")
+		ns.Print("Type /gst to open settings. /gst reset resets settings. /gst forget <name> removes a learned node. /gst debug toggles debug output. /gst stats prints tooltip counters.")
 		return
 	end
 	if lower:match("^forget%s+") then

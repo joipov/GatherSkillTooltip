@@ -1,5 +1,21 @@
 # Changelog
 
+## 2.4.0
+
+Yellow dots on the minimap are left alone. Herbs and ores in the world, skinning, and both warnings stay.
+
+### Removed
+
+- The list that appeared beside the minimap while hovering a yellow dot, and the settings for it: the list checkbox, the row count, Unlock list position, and `/gst list`.
+- The skill line that tried to sit beside a minimap pin. The game hides those names, so the line could not name the herb or ore.
+
+### Unchanged
+
+- Hovering a herb or ore in the world still shows your skill and the skill required.
+- Skinning still sits beside the level of a creature you can skin.
+- The tracking warning and the trainer reminder stay, including the button that turns tracking on.
+- The minimap button still opens settings. `/gst` and Esc > Options > AddOns do too.
+
 ## 2.3.0
 
 Hovering a yellow minimap dot brings up a list of the herbs and ores around your skill.

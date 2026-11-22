@@ -423,7 +423,7 @@ local function CancelGatherWatch()
 end
 
 -- A remembered node is only usable while that same object is still on the
--- tooltip. A stale minimap pin or an earlier hover must not lend its name to a
+-- tooltip. An earlier hover must not lend its name to a
 -- gather on a different node: that is how a Kingsblood gain could be recorded
 -- as a Khadgar's Whisker gain and lower the wrong requirement.
 local function KnownNodeAtCast(key)

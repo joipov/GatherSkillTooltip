@@ -205,10 +205,11 @@ function ns.FrameIsUnder(frame, ancestor)
 	return false
 end
 
--- True when the tooltip belongs to the world (or the minimap) rather than to a
--- UI window. The guild roster, party/raid frames, bags, action bars and chat
--- links all set themselves as the tooltip owner, so their lines must never be
--- treated as world object names. An unowned tooltip is a world tooltip.
+-- True when the tooltip belongs to the world rather than to a UI window or
+-- the minimap. The guild roster, party/raid frames, bags, action bars, chat
+-- links, and yellow dots all set themselves as the tooltip owner, so their
+-- lines must never be treated as world object names. An unowned tooltip is a
+-- world tooltip.
 function ns.TooltipOwnerIsWorld(tooltip)
 	if not tooltip or type(tooltip.GetOwner) ~= "function" then
 		return true
@@ -222,17 +223,16 @@ function ns.TooltipOwnerIsWorld(tooltip)
 	if type(owner.IsForbidden) == "function" and owner:IsForbidden() then
 		return false
 	end
-	-- The owner can be the minimap, one of its children (a pin) or the cluster
-	-- frame it lives in.
+	-- Yellow dots are owned by the minimap or one of its children. Their
+	-- names are secret, so they are never world tooltips.
 	if ns.TooltipOwnerIsMinimap(tooltip) then
-		return true
+		return false
 	end
 	return false
 end
 
 -- True when the tooltip is anchored to the minimap or one of its children.
--- Yellow-dot tooltips are rebuilt by the minimap every frame, so they are
--- never rewritten in place.
+-- Those tooltips are left as the game drew them.
 function ns.TooltipOwnerIsMinimap(tooltip)
 	if not tooltip or type(tooltip.GetOwner) ~= "function" or not Minimap then
 		return false
@@ -307,7 +307,7 @@ function ns.TooltipShowsName(tooltip, name)
 end
 
 -- True when the visible tooltip has a line whose cleaned name maps to the
--- same node key. Handles locale aliases and stacked pins, so a remembered
+-- same node key. Handles locale aliases and several names on one tooltip, so a remembered
 -- node is checked against the name the client actually shows.
 function ns.TooltipShowsNode(tooltip, key)
 	if not tooltip or type(key) ~= "string" or key == "" then

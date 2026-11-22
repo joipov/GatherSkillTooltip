@@ -15,8 +15,6 @@ local defaults = {
 	warnTracking = true,
 	warnTrain = true,
 	showMinimapButton = true,
-	showList = true,
-	listRows = 12,
 	bannerFont = 18,
 	bannerX = 0,
 	bannerY = 80,
@@ -27,7 +25,7 @@ local defaults = {
 ns.defaults = defaults
 
 -- Bump when a one-time migration is added to MigrateDB.
-local DB_VERSION = 11
+local DB_VERSION = 12
 local MINIMAP_POS = 200
 
 local BANNER_FONT_MIN = 10
@@ -270,12 +268,13 @@ local function MigrateDB(db)
 			end
 		end
 	end
-	if version < 11 then
-		-- The list's first default was 8 rows. Move that one value to the
-		-- taller default once; any other choice stays.
-		if db.listRows == 8 then
-			db.listRows = 12
-		end
+	if version < 12 then
+		-- The minimap list is gone. Its saved options are not read anymore.
+		db.showList = nil
+		db.listRows = nil
+		db.listX = nil
+		db.listY = nil
+		db.listUnlocked = nil
 	end
 	db.version = DB_VERSION
 end
@@ -289,9 +288,11 @@ function ns.ResetSettings(db)
 		db[key] = value
 	end
 	db.bannerUnlocked = false
-	db.listUnlocked = false
+	db.showList = nil
+	db.listRows = nil
 	db.listX = nil
 	db.listY = nil
+	db.listUnlocked = nil
 	if type(db.minimapIcon) == "table" then
 		db.minimapIcon.minimapPos = MINIMAP_POS
 		db.minimapIcon.hide = not db.showMinimapButton
@@ -308,17 +309,13 @@ function ns.LoadDB(saved)
 	-- The unlock checkbox is session-only, same as LootRollMover's anchor.
 	-- A reload locks the banner; bannerX and bannerY are what persist.
 	db.bannerUnlocked = false
-	-- The list follows the same rule. listX and listY are its saved top-left
-	-- corner; without both it sits beside the minimap.
-	db.listUnlocked = false
-	if ns.ClampListRows then
-		db.listRows = ns.ClampListRows(db.listRows)
-	end
-	if type(db.listX) ~= "number" or type(db.listY) ~= "number"
-		or db.listX ~= db.listX or db.listY ~= db.listY then
-		db.listX = nil
-		db.listY = nil
-	end
+	-- Dropped with the minimap list. Cleared on every load so a hand-edited
+	-- save cannot bring the old options back.
+	db.showList = nil
+	db.listRows = nil
+	db.listX = nil
+	db.listY = nil
+	db.listUnlocked = nil
 	for _, key in ipairs({ "gather", "skinIds", "minimapIcon", "customNodes" }) do
 		if type(db[key]) ~= "table" then
 			db[key] = {}

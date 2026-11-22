@@ -10,6 +10,12 @@ requirements checked against Wowhead Forever on 2026-11-10.
 
 This note is for development. It is not shipped in the addon zip.
 
+## What changed in 2.4.0
+
+The minimap list and the pin skill tooltip are gone. `NodeList.lua` is deleted. `OnMinimapPin`, `PinNodes`, and `PinNameHidden` are gone. A tooltip owned by the minimap, or whose mouse focus is on the minimap, is skipped. World object tooltips, skinning, the tracking warning, the trainer reminder, and the minimap settings button stay. Saved list options (`showList`, `listRows`, `listX`, `listY`, `listUnlocked`) are cleared on load (`DB_VERSION` 12). Learned herbs, ores, and skinning stay.
+
+The 2.3.0 checks below describe the list that this version removed. They are history.
+
 ## What changed in 2.3.0
 
 - The yellow-dot name is a secret value in the open world and out of combat (reported by other addon authors from build 70938; nothing is documented). The MinimapMouseover tooltip data carries no `id` or `guid`, so the pin cannot be identified. The object-id table from the unreleased 2.2.5 work is removed.
