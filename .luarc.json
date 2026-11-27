@@ -66,6 +66,7 @@
     "CreateSettingsListSectionHeaderInitializer",
     "CreateSettingsButtonInitializer",
     "MinimalSliderWithSteppersMixin",
+    "GameFontHighlightSmall",
     "TooltipDataProcessor",
     "UNIT_SKINNABLE_LEATHER"
   ],

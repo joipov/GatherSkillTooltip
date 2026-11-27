@@ -23,6 +23,7 @@ local defaults = {
 
 -- Option keys only. Learned gather data is not in this table.
 ns.defaults = defaults
+ns.profileShareExclude = { gather = true, skinIds = true, customNodes = true }
 
 -- Bump when a one-time migration is added to MigrateDB.
 local DB_VERSION = 12
@@ -43,6 +44,32 @@ function ns.ClampBannerFont(size)
 		return BANNER_FONT_MAX
 	end
 	return size
+end
+
+function ns.ClampBannerOffset(x, y)
+	x = tonumber(x)
+	y = tonumber(y)
+	if type(x) ~= "number" or x ~= x then
+		x = defaults.bannerX
+	else
+		x = math.floor(x + 0.5)
+	end
+	if type(y) ~= "number" or y ~= y then
+		y = defaults.bannerY
+	else
+		y = math.floor(y + 0.5)
+	end
+	if x < -4000 then
+		x = -4000
+	elseif x > 4000 then
+		x = 4000
+	end
+	if y < -4000 then
+		y = -4000
+	elseif y > 4000 then
+		y = 4000
+	end
+	return x, y
 end
 
 -- Applies defaults and resets any option whose type no longer matches its
@@ -306,6 +333,7 @@ function ns.LoadDB(saved)
 	MigrateDB(db)
 	CopyDefaults(db)
 	db.bannerFont = ns.ClampBannerFont(db.bannerFont)
+	db.bannerX, db.bannerY = ns.ClampBannerOffset(db.bannerX, db.bannerY)
 	-- The unlock checkbox is session-only, same as LootRollMover's anchor.
 	-- A reload locks the banner; bannerX and bannerY are what persist.
 	db.bannerUnlocked = false

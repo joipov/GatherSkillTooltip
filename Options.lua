@@ -91,16 +91,38 @@ function ns.InitOptions()
 		layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(text))
 	end
 
-	local enabledCheckbox, enabledSetting = AddCheckbox(
+	local _, enabledSetting = AddCheckbox(
 		"enabled",
 		L.ENABLE:format(ns.DISPLAY),
 		L.ENABLE_TIP
 	)
-	AddCheckbox(
-		"showMinimapButton",
-		L.SHOW_MINIMAP,
-		L.SHOW_MINIMAP_TIP
-	)
+
+	local function GateOn(initializer)
+		if not initializer then
+			return
+		end
+		if initializer.AddModifyPredicate then
+			initializer:AddModifyPredicate(function()
+				return enabledSetting:GetValue()
+			end)
+		end
+		if initializer.AddEvaluateStateCVar then
+			initializer:AddEvaluateStateCVar("GATHERSKILLTOOLTIP_ENABLED")
+		end
+	end
+
+	local function Nest(child, parentInit, parentSetting)
+		if not child then
+			return
+		end
+		if child.SetParentInitializer then
+			child:SetParentInitializer(parentInit, function()
+				return enabledSetting:GetValue() and parentSetting:GetValue()
+			end)
+			return
+		end
+		GateOn(child)
+	end
 
 	AddHeader(L.HEADER_PROFESSIONS)
 	local herbCheckbox = AddCheckbox("herbalism", herbName, L.HERBALISM_TIP)
@@ -114,7 +136,7 @@ function ns.InitOptions()
 	local learnCheckbox = AddCheckbox("learnChat", L.LEARN_CHAT, L.LEARN_CHAT_TIP, false)
 
 	AddHeader(L.HEADER_TRACKING)
-	local warnCheckbox = AddCheckbox(
+	local warnCheckbox, warnSetting = AddCheckbox(
 		"warnTracking",
 		L.WARN_TRACKING,
 		L.WARN_TRACKING_TIP:format(findHerbs, findMinerals)
@@ -150,6 +172,91 @@ function ns.InitOptions()
 		false
 	)
 	ns.bannerUnlockSetting = bannerUnlockSetting
+	local function AddPixelSetting(key, label, tooltip, lo, hi)
+		local setting = Settings.RegisterAddOnSetting(
+			category,
+			"GATHERSKILLTOOLTIP_" .. key:upper(),
+			key,
+			ns.db,
+			Settings.VarType.Number,
+			label,
+			ns.defaults[key]
+		)
+		setting:SetValueChangedCallback(function()
+			ns.db.bannerX, ns.db.bannerY = ns.ClampBannerOffset(ns.db.bannerX, ns.db.bannerY)
+			if ns.ApplyBannerPosition then
+				ns.ApplyBannerPosition()
+			end
+		end)
+		optionSettings[key] = setting
+		local control
+		local initializer
+		if Settings.CreateElementInitializer then
+			initializer = Settings.CreateElementInitializer("SettingsListElementTemplate", {
+				name = label,
+				tooltipText = tooltip,
+			})
+		end
+		if initializer and initializer.InitFrame then
+			local origInit = initializer.InitFrame
+			function initializer:InitFrame(frame)
+				origInit(self, frame)
+				local box = frame.pixelBox
+				if not box then
+					box = CreateFrame("EditBox", nil, frame, "InputBoxTemplate")
+					box:SetAutoFocus(false)
+					box:SetSize(70, 20)
+					box:SetMaxLetters(7)
+					box:SetPoint("RIGHT", frame, "RIGHT", -16, 0)
+					box:SetFontObject(GameFontHighlightSmall)
+					box:SetJustifyH("CENTER")
+					local function Commit()
+						local n = tonumber(box:GetText())
+						if type(n) == "number" and n == n then
+							setting:SetValue(n)
+						else
+							box:SetText(tostring(ns.db[key]))
+						end
+					end
+					box:SetScript("OnEnterPressed", function()
+						Commit()
+						box:ClearFocus()
+					end)
+					box:SetScript("OnEscapePressed", function()
+						box.reverting = true
+						box:SetText(tostring(ns.db[key]))
+						box:ClearFocus()
+						box.reverting = false
+					end)
+					box:SetScript("OnEditFocusLost", function()
+						if box.reverting then
+							return
+						end
+						Commit()
+					end)
+					frame.pixelBox = box
+				end
+				if not box:HasFocus() then
+					box:SetText(tostring(ns.db[key]))
+				end
+			end
+			layout:AddInitializer(initializer)
+			control = initializer
+		elseif Settings.CreateSliderOptions and Settings.CreateSlider then
+			local options = Settings.CreateSliderOptions(lo, hi, 1)
+			if MinimalSliderWithSteppersMixin and MinimalSliderWithSteppersMixin.Label then
+				options:SetLabelFormatter(MinimalSliderWithSteppersMixin.Label.Right, function(value)
+					return string.format("%.0f", value)
+				end)
+			end
+			control = Settings.CreateSlider(category, setting, options, tooltip)
+		end
+		return control, setting
+	end
+	local bannerXControl, bannerXSetting = AddPixelSetting("bannerX", L.BANNER_X, L.BANNER_X_TIP, -4000, 4000)
+	local bannerYControl, bannerYSetting = AddPixelSetting("bannerY", L.BANNER_Y, L.BANNER_Y_TIP, -4000, 4000)
+	ns.bannerXSetting = bannerXSetting
+	ns.bannerYSetting = bannerYSetting
 
 	AddHeader(L.HEADER_TRAINER)
 	local trainCheckbox = AddCheckbox(
@@ -168,29 +275,29 @@ function ns.InitOptions()
 		))
 	end
 
-	Settings.RegisterAddOnCategory(category)
+	GateOn(herbCheckbox)
+	GateOn(mineCheckbox)
+	GateOn(skinCheckbox)
+	GateOn(currentCheckbox)
+	GateOn(requiredCheckbox)
+	GateOn(colorCheckbox)
+	GateOn(learnCheckbox)
+	GateOn(warnCheckbox)
+	GateOn(trainCheckbox)
+	Nest(bannerFontSlider, warnCheckbox, warnSetting)
+	Nest(bannerUnlockCheckbox, warnCheckbox, warnSetting)
+	Nest(bannerXControl, warnCheckbox, warnSetting)
+	Nest(bannerYControl, warnCheckbox, warnSetting)
 
-	local function MasterEnabled()
-		return enabledSetting:GetValue()
-	end
-	-- The Minimap button row stays live while the addon is off (house style).
-	for _, child in ipairs({
-		herbCheckbox,
-		mineCheckbox,
-		skinCheckbox,
-		currentCheckbox,
-		requiredCheckbox,
-		colorCheckbox,
-		learnCheckbox,
-		warnCheckbox,
-		bannerUnlockCheckbox,
-		trainCheckbox,
-	}) do
-		child:SetParentInitializer(enabledCheckbox, MasterEnabled)
-	end
-	if bannerFontSlider then
-		bannerFontSlider:SetParentInitializer(enabledCheckbox, MasterEnabled)
-	end
+	AddCheckbox(
+		"showMinimapButton",
+		L.SHOW_MINIMAP,
+		L.SHOW_MINIMAP_TIP
+	)
+
+	ns.AddProfileShareButtons(category)
+
+	Settings.RegisterAddOnCategory(category)
 end
 
 function ns.ResetAllSettings()

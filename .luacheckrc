@@ -97,6 +97,7 @@ read_globals = {
 	"CreateSettingsListSectionHeaderInitializer",
 	"CreateSettingsButtonInitializer",
 	"MinimalSliderWithSteppersMixin",
+	"GameFontHighlightSmall",
 	"TooltipDataProcessor",
 
 	-- Global strings

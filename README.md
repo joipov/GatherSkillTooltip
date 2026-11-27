@@ -25,7 +25,8 @@ Target client: World of Warcraft **Forever**, release client (`_forever_`, `## I
   must be herbs, or ore with optional gems, for the gathering profession.
 - Warnings: an on-screen banner when Find Herbs / Find Minerals is off and
   you know the profession, with a small button that turns tracking on, and a
-  trainer reminder when a profession is capped.
+  trainer reminder when a profession is capped. Unlock position, then type **X**
+  and **Y** on the banner or in settings for pixel placement.
 - Minimap launcher via LibDBIcon when present, otherwise a built-in button. On by default.
   Addon Compartment entry; `/gst` opens the settings.
 

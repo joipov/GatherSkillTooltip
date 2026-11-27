@@ -92,6 +92,7 @@ load("Locales/enUS.lua")
 load("Locales/deDE.lua")
 load("Locales.lua")
 load("Database.lua")
+load("Profile.lua")
 load("TooltipText.lua")
 load("Skills.lua")
 load("Nodes.lua")
@@ -475,6 +476,18 @@ test("LoadDB keeps banner position and locks the anchor", function()
 	eq(db.bannerFont, 14)
 	eq(db.bannerX, 40)
 	eq(db.bannerY, -20)
+end)
+
+test("ClampBannerOffset rounds and clamps", function()
+	local x, y = ns.ClampBannerOffset(12.6, -20.4)
+	eq(x, 13, "round x")
+	eq(y, -20, "round y")
+	x, y = ns.ClampBannerOffset(9000, -9000)
+	eq(x, 4000, "max x")
+	eq(y, -4000, "min y")
+	local db = ns.LoadDB({ bannerX = 9000, bannerY = -12.6 })
+	eq(db.bannerX, 4000, "load x")
+	eq(db.bannerY, -13, "load y")
 end)
 
 test("customNodes validate, merge, and never overwrite builtins", function()
@@ -1010,6 +1023,51 @@ test("ForgetCustomNode removes a learned node and its observations", function()
 	eq(ns.ForgetCustomNode("Naxia Jera"), nil)
 	eq(ns.ForgetCustomNode("Peacebloom"), nil, "a builtin is never removed")
 	eq(ns.LOOKUP["Peacebloom"], ns.NODES["Peacebloom"])
+end)
+
+test("profile export roundtrips settings and banner position", function()
+	ns.db = ns.LoadDB({ bannerX = 40, bannerY = -20, herbalism = false })
+	local str = ns.ExportProfile()
+	eq(str:sub(1, 23), "!JPV:GatherSkillTooltip", "prefix")
+	ns.db = ns.LoadDB(nil)
+	eq(ns.db.bannerX, 0, "reset")
+	eq(ns.ImportProfile(str), true, "import")
+	eq(ns.db.bannerX, 40, "bannerX")
+	eq(ns.db.bannerY, -20, "bannerY")
+	eq(ns.db.herbalism, false, "herbalism")
+end)
+
+test("profile import rejects another addon", function()
+	ns.db = ns.LoadDB(nil)
+	eq(ns.ImportProfile("!JPV:GearStats!{bannerX=40}"), nil, "other")
+end)
+
+test("profile import keeps learned gather data", function()
+	local db = ns.LoadDB(nil)
+	ns.db = db
+	db.bannerX = 40
+	db.gather.TestNode = { misses = { [100] = 1 }, gains = {} }
+	db.skinIds[12345] = true
+	db.customNodes.TestNode = {
+		orange = 100,
+		yellow = 125,
+		green = 150,
+		grey = 200,
+		prof = "herb",
+		key = "TestNode",
+	}
+	local str = ns.ExportProfile()
+	eq(str:find("TestNode", 1, true), nil, "export omits learned names")
+	local gather = db.gather
+	local custom = db.customNodes
+	db.bannerX = 0
+	eq(ns.ImportProfile(str), true, "import")
+	eq(db.bannerX, 40, "bannerX")
+	eq(db.gather, gather, "gather table")
+	eq(db.customNodes, custom, "customNodes table")
+	eq(db.gather.TestNode ~= nil, true, "gather kept")
+	eq(db.skinIds[12345], true, "skinIds kept")
+	eq(db.customNodes.TestNode ~= nil, true, "customNodes kept")
 end)
 
 -- Summary --------------------------------------------------------------------------

@@ -1,5 +1,29 @@
 # Changelog
 
+## 2.4.3
+
+Settings and the reminder position can be copied as a string and pasted on another character or computer. Learned herbs, ores, and skinning stay on the character.
+
+### Added
+
+- **Export profile** and **Import profile** in settings. Import reloads the UI.
+
+## 2.4.2
+
+Settings no longer indent profession and tooltip rows under the minimap button.
+
+### Changed
+
+- Feature rows grey out when the addon is off. They stay full-width. Banner size, unlock, X, and Y sit under the tracking reminder. The minimap button is last and stays clickable.
+
+## 2.4.1
+
+The tracking reminder can be placed by typing X and Y, on the unlocked banner and in settings.
+
+### Added
+
+- **X** and **Y** pixel offsets in settings, and the same boxes on the unlocked reminder. Dragging updates them. Values are whole pixels.
+
 ## 2.4.0
 
 Yellow dots on the minimap are left alone. Herbs and ores in the world, skinning, and both warnings stay.

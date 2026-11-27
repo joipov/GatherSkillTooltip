@@ -6,8 +6,6 @@ For World of Warcraft: Forever (Classic Plus).
 
 **Forever is still changing. The addon starts from the Wowhead Forever herb and ore requirements plus the usual skinning formula, then learns names that are not in the table from play and remembers them.**
 
-![Gather Skill Tooltip showing Mageroyal (42/50)](https://media.forgecdn.net/attachments/1965/123/260921_1616_37_806-helvetyscreenshot_crop-png.png)
-
 **Lightweight and unobtrusive.** It draws nothing on the minimap and leaves the yellow-dot name alone. There is no permanent frame loop.
 
 Hover a herb or ore in the world and the tooltip shows your skill and the skill required, for example **Mageroyal (42/50)**.
@@ -36,7 +34,8 @@ Open with `/gst`, `/gatherskilltooltip`, the minimap button, or Esc > Options > 
 *   **Chat when you learn something** — off by default. One line when a creature is learned as skinnable or not, when an unknown herb or ore is learned from gathering, or when a color changes. Learning still happens when this is off.
 *   **Warn if gathering tracking is off** — the on-screen tracking warning. One of Find Herbs or Find Minerals is enough.
 *   **Text size** — size of the tracking warning and the trainer reminder. 18 is the default. The slider runs from 10 to 32.
-*   **Unlock position** — off by default. Shows the reminder so you can drag it. Right-click locks it. A reload locks it too.
+*   **Unlock position** — off by default. Shows the reminder so you can drag it. Type **X** and **Y** on it or in settings for pixel placement. Right-click locks it. A reload locks it too.
+*   **X / Y** — pixel offsets from the center of the screen. The same boxes sit on the unlocked reminder.
 *   **Remind me to train the next rank** — a short message when you gather or skin at your current cap and a trainer still has a higher rank. It uses the same size and position as the tracking warning.
 *   **Reset settings** — checkboxes, reminder position, and minimap button go back to default. Learned herbs, ores, and skinning stay. `/gst reset` does the same.
 *   **Minimap button** — on by default. Flower button for settings. On the minimap itself, you can drag it.

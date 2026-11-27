@@ -68,10 +68,19 @@ local function ClampOffset(x, y)
 	return x, y
 end
 
+local coordBar
+local warningFrame
+local applyingCoords = false
+local savedOnUpdate
+local RepositionTrain
+
 local function BannerOffset()
 	local db = ns.db
 	local x = db and type(db.bannerX) == "number" and db.bannerX or 0
 	local y = db and type(db.bannerY) == "number" and db.bannerY or 80
+	if ns.ClampBannerOffset then
+		x, y = ns.ClampBannerOffset(x, y)
+	end
 	return ClampOffset(x, y)
 end
 
@@ -84,6 +93,126 @@ local function PlaceBanner(frame, extraY)
 	local dy = (frame.messageDy or 0) * scale
 	frame:ClearAllPoints()
 	frame:SetPoint("CENTER", UIParent, "CENTER", x, y - dy + (extraY or 0))
+end
+
+local function BoxHasFocus()
+	if not coordBar then
+		return false
+	end
+	return (coordBar.xBox and coordBar.xBox:HasFocus()) or (coordBar.yBox and coordBar.yBox:HasFocus())
+end
+
+local function LiveOffset(frame)
+	if not frame or not frame.isMoving then
+		return BannerOffset()
+	end
+	local x, y = frame:GetCenter()
+	local px, py = UIParent:GetCenter()
+	if not x or not px then
+		return BannerOffset()
+	end
+	local scale = frame:GetEffectiveScale() / UIParent:GetEffectiveScale()
+	y = y + (frame.messageDy or 0)
+	return ClampOffset((x - px) * scale, (y - py) * scale)
+end
+
+local function PaintCoordBar()
+	if not coordBar or BoxHasFocus() then
+		return
+	end
+	local x, y = LiveOffset(warningFrame)
+	coordBar.xBox:SetText(tostring(math.floor(x + 0.5)))
+	coordBar.yBox:SetText(tostring(math.floor(y + 0.5)))
+end
+
+local function SyncCoordSettings()
+	local db = ns.db
+	if not db or applyingCoords then
+		return
+	end
+	applyingCoords = true
+	if ns.bannerXSetting then
+		ns.bannerXSetting:SetValue(db.bannerX)
+	end
+	if ns.bannerYSetting then
+		ns.bannerYSetting:SetValue(db.bannerY)
+	end
+	applyingCoords = false
+end
+
+function ns.ApplyBannerPosition()
+	local db = ns.db
+	if not db then
+		return
+	end
+	db.bannerX, db.bannerY = ns.ClampBannerOffset(db.bannerX, db.bannerY)
+	if warningFrame then
+		PlaceBanner(warningFrame, 0)
+	end
+	RepositionTrain()
+	PaintCoordBar()
+end
+
+local function CommitCoordBar()
+	local db = ns.db
+	if not db or not coordBar then
+		return
+	end
+	db.bannerX, db.bannerY = ns.ClampBannerOffset(coordBar.xBox:GetText(), coordBar.yBox:GetText())
+	if warningFrame then
+		PlaceBanner(warningFrame, 0)
+	end
+	RepositionTrain()
+	PaintCoordBar()
+	SyncCoordSettings()
+end
+
+local function CreateCoordBar(parent)
+	local bar = CreateFrame("Frame", nil, parent)
+	bar:SetSize(168, 18)
+	bar:SetPoint("BOTTOMLEFT", parent, "TOPLEFT", 0, 4)
+	bar:EnableMouse(true)
+	bar:Hide()
+	local function MakeBox(labelText)
+		local label = bar:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+		label:SetText(labelText)
+		local box = CreateFrame("EditBox", nil, bar)
+		box:SetSize(52, 16)
+		box:SetAutoFocus(false)
+		box:SetMaxLetters(7)
+		box:SetFontObject(GameFontHighlightSmall)
+		box:SetJustifyH("CENTER")
+		box:SetTextInsets(2, 2, 0, 0)
+		local bg = box:CreateTexture(nil, "BACKGROUND")
+		bg:SetColorTexture(0, 0, 0, 0.65)
+		bg:SetAllPoints()
+		box:SetScript("OnEnterPressed", function(self)
+			CommitCoordBar()
+			self:ClearFocus()
+		end)
+		box:SetScript("OnEscapePressed", function(self)
+			self.reverting = true
+			self:ClearFocus()
+			self.reverting = false
+			PaintCoordBar()
+		end)
+		box:SetScript("OnEditFocusLost", function(self)
+			if self.reverting then
+				return
+			end
+			CommitCoordBar()
+		end)
+		return label, box
+	end
+	local xLabel, xBox = MakeBox("X")
+	local yLabel, yBox = MakeBox("Y")
+	xLabel:SetPoint("LEFT", bar, "LEFT", 0, 0)
+	xBox:SetPoint("LEFT", xLabel, "RIGHT", 4, 0)
+	yLabel:SetPoint("LEFT", xBox, "RIGHT", 8, 0)
+	yBox:SetPoint("LEFT", yLabel, "RIGHT", 4, 0)
+	bar.xBox = xBox
+	bar.yBox = yBox
+	return bar
 end
 
 -- Text buttons under the message. They are smaller than the message on
@@ -183,11 +312,16 @@ local function LayoutText(frame, text, hint, row)
 		frame.messageDy = frameH / 2 - (12 + textH / 2)
 	end
 	frame:SetSize(width + 32, frameH)
+	if coordBar and frame == warningFrame then
+		coordBar:SetShown(hint ~= nil)
+		if hint then
+			PaintCoordBar()
+		end
+	end
 end
 
 -- Tracking warning ---------------------------------------------------------------
 
-local warningFrame
 local warningText
 local warningHint
 local warningButtonRow
@@ -251,7 +385,7 @@ local function ScheduleOptimisticRecheck()
 	optimisticTimer = C_Timer.NewTimer(OPTIMISTIC_SECONDS, OnOptimisticTimer)
 end
 
-local function RepositionTrain()
+RepositionTrain = function()
 	if PlaceTrain and trainFrame and trainFrame:IsShown() then
 		PlaceTrain()
 	end
@@ -263,23 +397,41 @@ local function SaveBannerPosition(frame)
 	local px, py = UIParent:GetCenter()
 	if not x or not px then
 		frame.isMoving = nil
+		frame:SetScript("OnUpdate", savedOnUpdate)
+		savedOnUpdate = nil
 		PlaceBanner(frame, 0)
 		return
 	end
 	local scale = frame:GetEffectiveScale() / UIParent:GetEffectiveScale()
 	y = y + (frame.messageDy or 0)
 	x, y = ClampOffset((x - px) * scale, (y - py) * scale)
+	if ns.ClampBannerOffset then
+		x, y = ns.ClampBannerOffset(x, y)
+	end
 	ns.db.bannerX = x
 	ns.db.bannerY = y
 	frame.isMoving = nil
+	if savedOnUpdate ~= nil or frame:GetScript("OnUpdate") then
+		frame:SetScript("OnUpdate", savedOnUpdate)
+		savedOnUpdate = nil
+	end
 	PlaceBanner(frame, 0)
 	RepositionTrain()
+	PaintCoordBar()
+	SyncCoordSettings()
 end
 
 local function OnAnchorMouseDown(self, button)
 	if button == "LeftButton" then
 		self.isMoving = true
 		self:StartMoving()
+		savedOnUpdate = self:GetScript("OnUpdate")
+		self:SetScript("OnUpdate", function(frame, elapsed)
+			PaintCoordBar()
+			if savedOnUpdate then
+				savedOnUpdate(frame, elapsed)
+			end
+		end)
 	elseif button == "RightButton" then
 		if self.isMoving then
 			SaveBannerPosition(self)
@@ -463,6 +615,7 @@ local function EnsureWarningFrame()
 	warningButtons.herb = warningButtonRow.buttons[1]
 	warningButtons.mine = warningButtonRow.buttons[2]
 	warningButtonRow:Hide()
+	coordBar = CreateCoordBar(warningFrame)
 	warningFrame:SetScript("OnMouseDown", OnAnchorMouseDown)
 	warningFrame:SetScript("OnMouseUp", OnAnchorMouseUp)
 end
